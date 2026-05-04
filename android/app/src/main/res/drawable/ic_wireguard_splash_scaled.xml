@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Smaller centred mark for SplashScreen API (system applies its own scaling). -->
+<scale xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_wireguard_mark"
+    android:scaleGravity="center"
+    android:scaleHeight="54%"
+    android:scaleWidth="54%" />

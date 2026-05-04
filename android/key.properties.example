@@ -1,0 +1,9 @@
+# Copy to android/key.properties and fill in. Do not commit key.properties.
+# Generate the .jks with keytool (see README or Flutter docs).
+#
+# storeFile: path relative to the android/ project folder (same folder as key.properties).
+
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=upload
+storeFile=release-keystore.jks

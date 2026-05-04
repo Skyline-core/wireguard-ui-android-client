@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="splash_background">#FF0F0F0F</color>
+    <!-- Same as Flutter [AppColors.accent] (#4FC3F7): icon bubble / accent in shade. -->
+    <color name="notification_accent">#FF4FC3F7</color>
+	<color name="ic_launcher_background">#0F0F0F</color>
+</resources>
