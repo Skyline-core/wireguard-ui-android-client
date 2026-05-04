@@ -242,7 +242,7 @@ Uses **Android Credential Manager**. Requires **Digital Asset Links** on the pan
 Operational checklist:
 
 1. Set `**WGUI_ANDROID_PASSKEY_SHA256`** on the server to the **SHA-256** cert fingerprint from `**signingReport`** for the **same** build you install (debug vs release differ).
-2. Serve `**https://<your-panel-host>/.well-known/assetlinks.json`** at the **host root** (HTTP 200). If the reverse proxy only forwards a subpath, add a dedicated rule for `/.well-known/`.
+2. Serve `**https://<your-panel-host>/.well-known/assetlinks.json`** at the **site HTTPS root** — not only under your panel base path (e.g. `/wg`). If the reverse proxy only forwards a subpath, add a dedicated rule for `/.well-known/`.
 3. On login, **Passkey origin (HTTPS)** must match where the credential was created in the browser when it differs from the API base URL.
 4. Prefer entering **Username** before **Sign in with passkey** for non-discoverable credentials.
 5. After asset link changes: `**adb shell pm verify-app-links --re-verify <applicationId>`** (optional).
@@ -270,9 +270,4 @@ Default examples in code often assume HTTPS with a path prefix such as `**/wg**`
 
 ## License
 
-See `**LICENSE`**.
-
----
-
-## Screenshots
-
+**`LICENSE`**.

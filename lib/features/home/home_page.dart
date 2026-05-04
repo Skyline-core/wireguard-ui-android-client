@@ -45,15 +45,20 @@ class HomePageState extends State<HomePage> {
   static const Duration _livePollInterval = Duration(seconds: 4);
   Timer? _livePollTimer;
 
-  Future<void> refresh() async {
+  /// When [silent] is true (tab switch, pull-to-refresh), keeps showing existing content while fetching.
+  Future<void> refresh({bool silent = false}) async {
     final auth = context.read<AuthStore>();
     final cfg = context.read<ServerSettings>();
 
     if (auth.offlineMode) {
-      setState(() {
-        loading = true;
-        err = null;
-      });
+      if (!silent) {
+        setState(() {
+          loading = true;
+          err = null;
+        });
+      } else {
+        setState(() => err = null);
+      }
       final snap = await OfflineSnapshotStore.load();
       if (!mounted) return;
       setState(() {
@@ -71,10 +76,14 @@ class HomePageState extends State<HomePage> {
       return;
     }
 
-    setState(() {
-      loading = true;
-      err = null;
-    });
+    if (!silent) {
+      setState(() {
+        loading = true;
+        err = null;
+      });
+    } else {
+      setState(() => err = null);
+    }
     try {
       final r = WguRepository.fromContext(auth, cfg);
       // Traffic series is slower; load tunnel + stats + peers first so the UI unlocks quickly.
@@ -178,15 +187,15 @@ class HomePageState extends State<HomePage> {
         child: RefreshIndicator(
           color: AppColors.accent,
           onRefresh: () async {
-            if (context.read<AuthStore>().offlineMode) {
-              final ok = await context
-                  .read<AuthStore>()
-                  .tryReconnect(context.read<ServerSettings>());
-              if (context.mounted && ok) await refresh();
-              return;
-            }
-            await refresh();
-          },
+              if (context.read<AuthStore>().offlineMode) {
+                final ok = await context
+                    .read<AuthStore>()
+                    .tryReconnect(context.read<ServerSettings>());
+              if (context.mounted && ok) await refresh(silent: true);
+                return;
+              }
+              await refresh(silent: true);
+            },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -232,13 +241,13 @@ class HomePageState extends State<HomePage> {
                           ),
                           openShape: const RoundedRectangleBorder(),
                           onClosed: (_) {
-                            if (mounted) refresh();
+                            if (mounted) refresh(silent: true);
                           },
                           tappable: false,
                           closedBuilder: (context, openContainer) {
                             return PeerPreviewTile(
                               envelope: e,
-                              onChanged: refresh,
+                              onChanged: () => refresh(silent: true),
                               show24hTraffic: traffic != null,
                               traffic24hDown: d24,
                               traffic24hUp: u24,
@@ -493,7 +502,7 @@ class HomePageState extends State<HomePage> {
               ),
               openShape: const RoundedRectangleBorder(),
               onClosed: (_) {
-                if (mounted) refresh();
+                if (mounted) refresh(silent: true);
               },
               tappable: false,
               closedBuilder: (context, openContainer) {
@@ -514,7 +523,7 @@ class HomePageState extends State<HomePage> {
           const SizedBox(width: 10),
           _squareIconBtn(
             Icons.refresh_rounded,
-            offline ? null : refresh,
+            offline ? null : () => refresh(silent: true),
           ),
           const SizedBox(width: 10),
           _squareIconBtn(

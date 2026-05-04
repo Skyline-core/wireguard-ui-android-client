@@ -36,16 +36,21 @@ class PeersPageState extends State<PeersPage>
   late final Animation<Offset> _fabSlideAnim;
 
   /// Reloads client list and peer stats (also when this tab is selected).
-  Future<void> refresh() async {
+  /// When [silent] is true, keeps the list visible while fetching (tab swipe / pull-to-refresh).
+  Future<void> refresh({bool silent = false}) async {
     final auth = context.read<AuthStore>();
     final cfg = context.read<ServerSettings>();
     final r = WguRepository.fromContext(auth, cfg);
 
     if (auth.offlineMode) {
-      setState(() {
-        _loading = true;
-        _err = null;
-      });
+      if (!silent) {
+        setState(() {
+          _loading = true;
+          _err = null;
+        });
+      } else {
+        setState(() => _err = null);
+      }
       final snap = await OfflineSnapshotStore.load();
       if (!mounted) return;
       setState(() {
@@ -62,10 +67,14 @@ class PeersPageState extends State<PeersPage>
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _err = null;
-    });
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _err = null;
+      });
+    } else {
+      setState(() => _err = null);
+    }
     try {
       final batch = await Future.wait([
         r.fetchClients(),
@@ -210,7 +219,7 @@ class PeersPageState extends State<PeersPage>
                   ),
                   openShape: const RoundedRectangleBorder(),
                   onClosed: (_) {
-                    if (mounted) refresh();
+                    if (mounted) refresh(silent: true);
                   },
                   tappable: false,
                   closedBuilder: (context, openContainer) {
@@ -330,10 +339,10 @@ class PeersPageState extends State<PeersPage>
                           final ok = await context
                               .read<AuthStore>()
                               .tryReconnect(context.read<ServerSettings>());
-                          if (context.mounted && ok) await refresh();
+                          if (context.mounted && ok) await refresh(silent: true);
                           return;
                         }
-                        await refresh();
+                        await refresh(silent: true);
                       },
                       child: ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -364,13 +373,13 @@ class PeersPageState extends State<PeersPage>
                               ),
                               openShape: const RoundedRectangleBorder(),
                               onClosed: (_) {
-                                if (mounted) refresh();
+                                if (mounted) refresh(silent: true);
                               },
                               tappable: false,
                               closedBuilder: (context, openContainer) {
                                 return PeerPreviewTile(
                                   envelope: e,
-                                  onChanged: refresh,
+                                  onChanged: () => refresh(silent: true),
                                   onTap: offline ? () {} : openContainer,
                                   readOnly: offline,
                                   onlineHint: online,

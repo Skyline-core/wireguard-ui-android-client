@@ -249,14 +249,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Passkeys en Android: assetlinks.json en la raíz HTTPS del dominio '
-              '(https://tu-host/.well-known/assetlinks.json), no sólo bajo /wg; '
-              'en el servidor, WGUI_ANDROID_PASSKEY_SHA256 según signingReport '
-              '(debug vs release).',
-              style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
           ],
         ),
       ),

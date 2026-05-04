@@ -32,15 +32,19 @@ class TrafficPageState extends State<TrafficPage> {
   static const Duration _livePollInterval = Duration(seconds: 4);
   Timer? _livePollTimer;
 
-  Future<void> refresh() => _load();
+  Future<void> refresh({bool silent = false}) => _load(silent: silent);
 
-  Future<void> _load() async {
+  Future<void> _load({bool silent = false}) async {
     final auth = context.read<AuthStore>();
     if (auth.offlineMode) {
-      setState(() {
-        loading = true;
-        err = null;
-      });
+      if (!silent) {
+        setState(() {
+          loading = true;
+          err = null;
+        });
+      } else {
+        setState(() => err = null);
+      }
       final snap = await OfflineSnapshotStore.load();
       if (!mounted) return;
       setState(() {
@@ -58,10 +62,14 @@ class TrafficPageState extends State<TrafficPage> {
     }
     final cfg = context.read<ServerSettings>();
     final r = WguRepository.fromContext(auth, cfg);
-    setState(() {
-      loading = true;
-      err = null;
-    });
+    if (!silent) {
+      setState(() {
+        loading = true;
+        err = null;
+      });
+    } else {
+      setState(() => err = null);
+    }
     try {
       final batch = await Future.wait([
         r.trafficSeries(range: range),
@@ -106,7 +114,7 @@ class TrafficPageState extends State<TrafficPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load(silent: false));
     _livePollTimer = Timer.periodic(_livePollInterval, (_) => _pollLiveStats());
   }
 
@@ -149,10 +157,10 @@ class TrafficPageState extends State<TrafficPage> {
               final ok = await context
                   .read<AuthStore>()
                   .tryReconnect(context.read<ServerSettings>());
-              if (context.mounted && ok) await _load();
+              if (context.mounted && ok) await _load(silent: true);
               return;
             }
-            await _load();
+            await _load(silent: true);
           },
           child: loading
               ? ListView(
@@ -321,7 +329,7 @@ class TrafficPageState extends State<TrafficPage> {
               ? null
               : () {
                   range = key;
-                  _load();
+                  _load(silent: true);
                 },
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),

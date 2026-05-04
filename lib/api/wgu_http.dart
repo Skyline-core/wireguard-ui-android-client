@@ -32,6 +32,8 @@ class WireguardHttpClient {
       ),
     );
     dio.options.headers['Accept'] = 'application/json';
+    // Lets WireGuard UI apply a longer sliding idle window than browser sessions (see handler/session.go).
+    dio.options.headers['X-WGUI-Client'] = 'android';
     dio.options.connectTimeout = const Duration(seconds: 20);
     dio.options.receiveTimeout = const Duration(seconds: 40);
     _cookiesReady = true;

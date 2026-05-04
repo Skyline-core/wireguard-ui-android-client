@@ -36,6 +36,7 @@ class AuthStore extends ChangeNotifier {
   WireguardHttpClient? http;
   CookieJar? _cookieJar;
   bool _hooksInstalled = false;
+  bool _sessionRedirectLogoutPending = false;
 
   String? get lastError => _dioError;
 
@@ -99,6 +100,23 @@ class AuthStore extends ChangeNotifier {
     await _localLogoutClearPrefs();
   }
 
+  /// Server returned 301–399 (typical session expiry: redirect to `/login`).
+  /// Clears cookies and returns to the login screen without treating it as "offline".
+  Future<void> _sessionRedirectLogout() async {
+    if (_sessionRedirectLogoutPending || !ready) return;
+    _sessionRedirectLogoutPending = true;
+    try {
+      await _logoutLocalOnly();
+      unawaited(ServerHealthScheduler.syncRegistration(false));
+      notifyListeners();
+    } finally {
+      _sessionRedirectLogoutPending = false;
+    }
+  }
+
+  static bool _isRedirectStatus(int? code) =>
+      code != null && code >= 300 && code < 400;
+
   void _registerDioSessionHooks() {
     if (http == null || _hooksInstalled) return;
     _hooksInstalled = true;
@@ -106,12 +124,28 @@ class AuthStore extends ChangeNotifier {
       InterceptorsWrapper(
         onResponse: (r, h) {
           final c = r.statusCode;
+          // Requests that use validateStatus accepting 3xx still deliver here (e.g. probes).
+          if (_isRedirectStatus(c)) {
+            unawaited(_sessionRedirectLogout());
+            return h.reject(
+              DioException(
+                requestOptions: r.requestOptions,
+                response: r,
+                type: DioExceptionType.badResponse,
+                message: 'SESSION_EXPIRED_REDIRECT',
+              ),
+            );
+          }
           if (c != null && c >= 200 && c < 300) {
             unawaited(_touchActivity());
           }
           return h.next(r);
         },
         onError: (e, h) {
+          if (e.type == DioExceptionType.badResponse &&
+              _isRedirectStatus(e.response?.statusCode)) {
+            unawaited(_sessionRedirectLogout());
+          }
           _maybeEnterOffline(e);
           return h.next(e);
         },
@@ -121,6 +155,10 @@ class AuthStore extends ChangeNotifier {
 
   void _maybeEnterOffline(DioException e) {
     if (!ready || offlineMode) return;
+    if (e.type == DioExceptionType.badResponse &&
+        _isRedirectStatus(e.response?.statusCode)) {
+      return;
+    }
     if (!_isUnreachableError(e)) return;
     offlineMode = true;
     notifyListeners();

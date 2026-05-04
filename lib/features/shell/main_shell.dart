@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,7 +24,6 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _index = 0;
-  int _priorIndex = 0;
   Timer? _reconnectTimer;
   AuthStore? _authSub;
   bool _wasPaused = false;
@@ -168,29 +166,19 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     ];
 
     return Scaffold(
-      body: PageTransitionSwitcher(
-        duration: const Duration(milliseconds: 440),
-        reverse: _index < _priorIndex,
-        transitionBuilder: (child, animation, secondary) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: AppColors.tabSwitch,
-          );
-          return SharedAxisTransition(
-            animation: curved,
-            secondaryAnimation: secondary,
-            transitionType: SharedAxisTransitionType.horizontal,
-            fillColor: AppColors.bg,
-            child: child,
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey<int>(_index),
-          child: HeroMode(
-            enabled: false,
-            child: pages[_index],
-          ),
-        ),
+      backgroundColor: AppColors.bg,
+      // IndexedStack avoids sliding the entire Scaffold (header + lists) like PageView does — no black
+      // gutter during gestures; tabs switch from the bottom nav only.
+      body: IndexedStack(
+        index: _index,
+        sizing: StackFit.expand,
+        children: [
+          for (final p in pages)
+            HeroMode(
+              enabled: false,
+              child: p,
+            ),
+        ],
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
@@ -349,18 +337,16 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   }
 
   void _setTab(int i) {
-    final prev = _index;
-    setState(() {
-      _priorIndex = _index;
-      _index = i;
-    });
-
+    if (i == _index) return;
+    setState(() => _index = i);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (prev == i) return;
+      if (!mounted) return;
       if (i == 0) {
-        _homeKey.currentState?.refresh();
+        _homeKey.currentState?.refresh(silent: true);
       } else if (i == 1) {
-        _peersKey.currentState?.refresh();
+        _peersKey.currentState?.refresh(silent: true);
+      } else if (i == 2) {
+        _trafficKey.currentState?.refresh(silent: true);
       }
     });
   }

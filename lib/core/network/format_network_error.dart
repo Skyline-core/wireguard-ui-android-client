@@ -8,6 +8,11 @@ String formatNetworkError(Object e) {
     final type = e.type;
     if (type == DioExceptionType.badResponse) {
       final c = e.response?.statusCode;
+      final msg = e.message;
+      if (msg == 'SESSION_EXPIRED_REDIRECT' ||
+          (c != null && c >= 300 && c < 400)) {
+        return 'Sesión caducada o cerrada en el servidor. Vuelve a iniciar sesión.';
+      }
       if (c == 502) {
         return 'Puerta de enlace no disponible (502). El panel o el proxy no responden.';
       }
