@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:passkeys/authenticator.dart';
+import 'package:passkeys/exceptions.dart' as pkex;
 import 'package:provider/provider.dart';
 
 import '../../api/models/profile_models.dart';
 import '../../api/wgu_repository.dart';
+import '../../core/auth/passkey_options.dart';
 import '../../core/config/server_settings.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/theme/app_theme.dart';
@@ -28,8 +31,11 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _obscurePassword = true;
   bool _loading = true;
   bool _saving = false;
+  bool _registeringPasskey = false;
   String? _loadErr;
   List<PasskeyItemVm> _passkeys = [];
+  /// Mirrors server global setting (Passkeys disabled → no registration API).
+  bool _passkeysEnabled = true;
 
   @override
   void initState() {
@@ -83,6 +89,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _email.text = user.email;
         _password.clear();
         _passkeys = snap.passkeys;
+        _passkeysEnabled = snap.passkeysEnabled;
         _loading = false;
       });
     } on DioException catch (e) {
@@ -199,7 +206,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.red),
+            style: FilledButton.styleFrom(backgroundColor: context.palette.red),
             child: const Text('Eliminar'),
           ),
         ],
@@ -291,27 +298,105 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _snackAddPasskeyWeb() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Registrar passkeys usa WebAuthn en el navegador. '
-          'Abre el panel web (Mi cuenta) para añadir una llave nueva.',
+  Future<void> _addPasskeyNative() async {
+    if (!_passkeysEnabled || _registeringPasskey) return;
+    final name = _addPasskeyName.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Escribe un nombre para esta passkey.')),
+      );
+      return;
+    }
+    final auth = context.read<AuthStore>();
+    final cfg = context.read<ServerSettings>();
+    final un = auth.username;
+    if (un == null) return;
+
+    setState(() => _registeringPasskey = true);
+    try {
+      final r = WguRepository.fromContext(auth, cfg);
+      final beginMap = await r.passkeyRegisterBegin(username: un, cfg: cfg);
+      final req = parsePasskeyRegisterBeginOptions(beginMap);
+      final reg = await PasskeyAuthenticator().register(req);
+      final body = Map<String, dynamic>.from(reg.toJson());
+      body['credential_name'] = name;
+      final res = await r.passkeyRegisterFinish(
+        username: un,
+        cfg: cfg,
+        webauthnBody: body,
+      );
+      if (!mounted) return;
+      if (!res.ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res.message ?? 'No se pudo registrar la passkey')),
+        );
+        return;
+      }
+      _addPasskeyName.clear();
+      await _load();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passkey registrada en este dispositivo.')),
+      );
+    } on StateError catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    } on pkex.PasskeyAuthCancelledException {
+      if (!mounted) return;
+    } on pkex.ExcludeCredentialsCanNotBeRegisteredException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta llave ya está registrada para tu cuenta.'),
         ),
-        duration: Duration(seconds: 5),
-      ),
-    );
+      );
+    } on pkex.DomainNotAssociatedException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se pudo validar el dominio para passkeys (${e.message ?? ''}). '
+            'Revisa «Origen passkey» en Ajustes si entras por IP o otro host.',
+          ),
+        ),
+      );
+    } on pkex.DeviceNotSupportedException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Este dispositivo no permite crear passkeys.')),
+      );
+    } on pkex.AuthenticatorException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final msg = e.response?.data is Map
+          ? '${(e.response!.data as Map)['message'] ?? e.message}'
+          : (e.message ?? '$e');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    } finally {
+      if (mounted) setState(() => _registeringPasskey = false);
+    }
   }
 
   Widget _sectionTitle(String t) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
         child: Text(
           t.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 0.8,
             fontSize: 11,
-            color: AppColors.textMuted,
+            color: context.palette.textMuted,
           ),
         ),
       );
@@ -320,7 +405,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Material(
-        color: AppColors.surface,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
@@ -337,7 +422,7 @@ class _ProfilePageState extends State<ProfilePage> {
         out.add(Divider(
             height: 1,
             thickness: 1,
-            color: Colors.white.withValues(alpha: 0.05)));
+            color: context.palette.borderSubtle));
       }
       out.add(items[i]);
     }
@@ -348,11 +433,11 @@ class _ProfilePageState extends State<ProfilePage> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      labelStyle: const TextStyle(
+      labelStyle: TextStyle(
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.6,
-        color: AppColors.textMuted,
+        color: context.palette.textMuted,
       ),
     );
   }
@@ -361,7 +446,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final offline = context.watch<AuthStore>().offlineMode;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       appBar: AppBar(
         title: const Text('Mi cuenta'),
       ),
@@ -380,7 +465,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           Text(
                             _loadErr!,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(color: AppColors.red),
+                            style: TextStyle(color: context.palette.red),
                           ),
                           const SizedBox(height: 16),
                           FilledButton(
@@ -405,7 +490,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               style: TextStyle(
                                 fontSize: 12.5,
                                 height: 1.35,
-                                color: AppColors.textSecondary
+                                color: context.palette.textSecondary
                                     .withValues(alpha: 0.95),
                               ),
                             ),
@@ -453,7 +538,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ),
                                   child: Text(
                                     _obscurePassword ? 'Mostrar' : 'Ocultar',
-                                    style: const TextStyle(fontSize: 13),
+                                    style: TextStyle(fontSize: 13),
                                   ),
                                 ),
                               ),
@@ -466,9 +551,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 _passwordStrengthHint(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textMuted,
+                                  color: context.palette.textMuted,
                                 ),
                               ),
                             ),
@@ -500,24 +585,26 @@ class _ProfilePageState extends State<ProfilePage> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                             child: Text(
-                              'Puedes registrar varias llaves y administrar sus nombres '
-                              '(desde el navegador). Aquí puedes renombrar o quitar las ya registradas.',
+                              _passkeysEnabled
+                                  ? 'Registra passkeys en este dispositivo o renombra / quita las ya guardadas.'
+                                  : 'Las passkeys están desactivadas en la configuración del servidor. '
+                                      'Actívalas en el panel web (ajustes globales) para poder registrar llaves.',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 height: 1.35,
-                                color: AppColors.textSecondary
+                                color: context.palette.textSecondary
                                     .withValues(alpha: 0.95),
                               ),
                             ),
                           ),
                           if (_passkeys.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                               child: Text(
                                 'No hay passkeys en esta cuenta.',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: AppColors.textMuted,
+                                  color: context.palette.textMuted,
                                 ),
                               ),
                             )
@@ -527,7 +614,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 title: Text(pk.name),
                                 subtitle: Text(
                                   pk.fingerprint,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 11,
                                   ),
@@ -536,17 +623,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.edit_outlined),
-                                      onPressed: () => _renamePasskey(pk),
+                                      icon: Icon(Icons.edit_outlined),
+                                      onPressed: _passkeysEnabled
+                                          ? () => _renamePasskey(pk)
+                                          : null,
                                       tooltip: 'Renombrar',
                                     ),
                                     IconButton(
                                       icon: Icon(
                                         Icons.delete_outline,
-                                        color: AppColors.red
+                                        color: context.palette.red
                                             .withValues(alpha: 0.9),
                                       ),
-                                      onPressed: () => _removePasskey(pk),
+                                      onPressed: _passkeysEnabled
+                                          ? () => _removePasskey(pk)
+                                          : null,
                                       tooltip: 'Eliminar',
                                     ),
                                   ],
@@ -556,6 +647,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: TextField(
                               controller: _addPasskeyName,
+                              enabled: _passkeysEnabled && !_registeringPasskey,
                               decoration: _field(
                                 'NOMBRE (EJ: IPHONE, YUBIKEY)',
                               ).copyWith(
@@ -569,8 +661,20 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: SizedBox(
                               width: double.infinity,
                               child: FilledButton(
-                                onPressed: _snackAddPasskeyWeb,
-                                child: const Text('Agregar passkey'),
+                                onPressed: (!_passkeysEnabled ||
+                                        _registeringPasskey)
+                                    ? null
+                                    : _addPasskeyNative,
+                                child: _registeringPasskey
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.black,
+                                        ),
+                                      )
+                                    : const Text('Agregar passkey'),
                               ),
                             ),
                           ),

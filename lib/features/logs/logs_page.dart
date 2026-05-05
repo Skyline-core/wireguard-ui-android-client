@@ -145,7 +145,7 @@ class _LogsPageState extends State<LogsPage> {
     const chipKeys = ['all', 'INFO', 'WARN', 'ERROR'];
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       appBar: AppBar(title: const Text('Logs')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -156,19 +156,19 @@ class _LogsPageState extends State<LogsPage> {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.yellow.withValues(alpha: 0.08),
+                  color: context.palette.yellow.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: AppColors.yellow.withValues(alpha: 0.35),
+                    color: context.palette.yellow.withValues(alpha: 0.35),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'El monitoreo en vivo está desactivado en el servidor (igual que en la web). '
                   'Actívalo en Ajustes → «Monitoreo en vivo (logs y estadísticas)».',
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.35,
-                    color: AppColors.textSecondary,
+                    color: context.palette.textSecondary,
                   ),
                 ),
               ),
@@ -180,9 +180,9 @@ class _LogsPageState extends State<LogsPage> {
               enabled: !monitoringDisabled || snap != null,
               decoration: InputDecoration(
                 hintText: 'Buscar en logs…',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: Icon(Icons.search),
                 filled: true,
-                fillColor: AppColors.surface2,
+                fillColor: context.palette.surface2,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
@@ -202,7 +202,7 @@ class _LogsPageState extends State<LogsPage> {
                 return ChoiceChip(
                   selected: sel,
                   label: Text(k == 'all' ? 'Todos' : k),
-                  selectedColor: AppColors.accent.withValues(alpha: 0.15),
+                  selectedColor: context.palette.accent.withValues(alpha: 0.15),
                   onSelected: (_) => setState(() => lvl = k),
                 );
               },
@@ -212,23 +212,23 @@ class _LogsPageState extends State<LogsPage> {
           if (err != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(err!, style: const TextStyle(color: AppColors.yellow)),
+              child: Text(err!, style: TextStyle(color: context.palette.yellow)),
             ),
           Expanded(
             child: RefreshIndicator(
-              color: AppColors.accent,
+              color: context.palette.accent,
               onRefresh: _load,
               child: loading
                   ? const Center(child: CircularProgressIndicator.adaptive())
                   : !monitoringDisabled && snap != null && visibleList.isEmpty
                       ? ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          children: const [
-                            SizedBox(height: 48),
+                          children: [
+                            const SizedBox(height: 48),
                             Center(
                               child: Text(
                                 'No hay líneas que mostrar con los filtros actuales.',
-                                style: TextStyle(color: AppColors.textMuted),
+                                style: TextStyle(color: context.palette.textMuted),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -250,10 +250,10 @@ class _LogsPageState extends State<LogsPage> {
   Widget _line(String raw) {
     final bucket = _logLevelBucket(raw);
     final (tag, label) = switch (bucket) {
-      'ERROR' => (AppColors.red, 'ERR'),
-      'WARN' => (AppColors.yellow, 'WRN'),
-      'INFO' => (AppColors.green, 'INF'),
-      _ => (AppColors.textMuted, '···'),
+      'ERROR' => (context.palette.red, 'ERR'),
+      'WARN' => (context.palette.yellow, 'WRN'),
+      'INFO' => (context.palette.green, 'INF'),
+      _ => (context.palette.textMuted, '···'),
     };
 
     final time = raw.length > 10 ? raw.substring(0, 10) : raw;
@@ -262,7 +262,7 @@ class _LogsPageState extends State<LogsPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -270,10 +270,10 @@ class _LogsPageState extends State<LogsPage> {
         children: [
           Text(
             time,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 10,
-              color: AppColors.textMuted,
+              color: context.palette.textMuted,
             ),
           ),
           const SizedBox(width: 8),
@@ -296,11 +296,11 @@ class _LogsPageState extends State<LogsPage> {
           Expanded(
             child: Text(
               raw,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 11,
                 height: 1.35,
-                color: AppColors.textSecondary,
+                color: context.palette.textSecondary,
               ),
             ),
           ),

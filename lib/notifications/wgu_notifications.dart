@@ -203,7 +203,7 @@ class WguNotificationController extends ChangeNotifier {
           channelDescription: 'Push alerts from the server',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
-          color: AppColors.accent,
+          color: kAppAccentColor,
         ),
       ),
     );

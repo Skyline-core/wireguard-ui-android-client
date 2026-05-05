@@ -100,14 +100,14 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
     final e = _envelope;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       appBar: AppBar(
         title: Text(
           e?.client.name ?? 'Peer',
-          style: const TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
+          IconButton(icon: Icon(Icons.refresh), onPressed: _load),
         ],
       ),
       body: _loading
@@ -134,9 +134,9 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            border: Border.all(color: context.palette.borderSubtle),
           ),
           child: Row(
             children: [
@@ -144,10 +144,10 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.12),
+                  color: context.palette.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.laptop_mac, color: AppColors.accent),
+                child: Icon(Icons.laptop_mac, color: context.palette.accent),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -156,18 +156,18 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
                   children: [
                     Text(
                       c.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 17,
-                        color: AppColors.textPrimary,
+                        color: context.palette.textPrimary,
                       ),
                     ),
                     Text(
                       ip,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontFamily: 'monospace',
-                        color: AppColors.textMuted,
+                        color: context.palette.textMuted,
                       ),
                     ),
                   ],
@@ -216,7 +216,7 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
               child: _statTile(
                 'Descarga',
                 '↓ ${formatBytes(down)}',
-                AppColors.accent,
+                context.palette.accent,
               ),
             ),
             const SizedBox(width: 10),
@@ -224,7 +224,7 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
               child: _statTile(
                 'Subida',
                 '↑ ${formatBytes(up)}',
-                AppColors.yellow,
+                context.palette.yellow,
               ),
             ),
           ],
@@ -233,9 +233,9 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            border: Border.all(color: context.palette.borderSubtle),
           ),
           child: Column(
             children: [
@@ -255,21 +255,21 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
                   ),
                 ),
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Escanea desde la app WireGuard en tu dispositivo',
-                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'CONFIGURACIÓN',
           style: TextStyle(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.9,
-            color: AppColors.textSecondary,
+            color: context.palette.textSecondary,
             fontSize: 12,
           ),
         ),
@@ -279,9 +279,9 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
         _rowTile('Endpoint', c.endpoint.isEmpty ? '—' : c.endpoint),
         const SizedBox(height: 24),
         ListTile(
-          leading: const Icon(Icons.delete_forever, color: AppColors.red),
-          title: const Text('Eliminar cliente',
-              style: TextStyle(color: AppColors.red)),
+          leading: Icon(Icons.delete_forever, color: context.palette.red),
+          title: Text('Eliminar cliente',
+              style: TextStyle(color: context.palette.red)),
           subtitle:
               const Text('Revoca acceso (endpoint /remove-client)'),
           onTap: () async {
@@ -313,7 +313,7 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
     return Container(
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AppColors.surface2,
+        color: context.palette.surface2,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -321,9 +321,9 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
         children: [
           Text(
             lbl.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: AppColors.textMuted,
+              color: context.palette.textMuted,
               letterSpacing: 0.5,
             ),
           ),
@@ -345,18 +345,18 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: context.palette.borderSubtle),
       ),
       child: ListTile(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.w500)),
         trailing: SizedBox(
           width: 180,
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: context.palette.textSecondary),
             maxLines: 3,
           ),
         ),

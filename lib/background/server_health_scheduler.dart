@@ -46,6 +46,5 @@ abstract final class ServerHealthScheduler {
   static Future<void> _clearHealthPrefs() async {
     final p = await SharedPreferences.getInstance();
     await p.remove(ServerHealthConstants.prefsPrevOk);
-    await p.remove(ServerHealthConstants.prefsLastNotifyMs);
   }
 }

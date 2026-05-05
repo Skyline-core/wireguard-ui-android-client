@@ -111,12 +111,18 @@ class WgClientEnvelope {
 }
 
 class PeerTrafficRow {
-  const PeerTrafficRow({required this.rx, required this.tx});
+  const PeerTrafficRow({
+    required this.rx,
+    required this.tx,
+    this.connected = false,
+  });
 
   /// Bytes received by the WireGuard interface **from** this peer (peer → server).
   final int rx;
   /// Bytes transmitted **to** this peer from the server (server → peer).
   final int tx;
+  /// Recent WireGuard handshake (same semantics as the web dashboard / kernel peer list).
+  final bool connected;
 
   /// Peer perspective: volume downloaded through the tunnel from the VPN server.
   int get downloadBytes => tx;
@@ -126,6 +132,7 @@ class PeerTrafficRow {
   factory PeerTrafficRow.fromJson(Map<String, dynamic> j) => PeerTrafficRow(
         rx: (j['rx'] as num?)?.toInt() ?? 0,
         tx: (j['tx'] as num?)?.toInt() ?? 0,
+        connected: j['connected'] == true,
       );
 
   /// Map public key → [PeerTrafficRow].

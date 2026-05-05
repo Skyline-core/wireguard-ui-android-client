@@ -1,14 +1,26 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'server_origin.dart';
+
+/// Tema de la app: [system] sigue el modo claro/oscuro del dispositivo.
+enum AppThemePreference { system, light, dark }
+
+extension AppThemePreferenceMode on AppThemePreference {
+  ThemeMode get themeMode => switch (this) {
+        AppThemePreference.system => ThemeMode.system,
+        AppThemePreference.light => ThemeMode.light,
+        AppThemePreference.dark => ThemeMode.dark,
+      };
+}
 
 class ServerSettings extends ChangeNotifier {
   static const _urlKey = 'wgui_base_url';
   static const _pathKey = 'wgui_base_path';
   static const _trafficPeerChartKey = 'wgui_traffic_peer_chart';
   static const _passkeyOriginKey = 'wgui_passkey_public_origin';
+  static const _themePreferenceKey = 'wgui_theme_preference';
 
   /// Empty until [load] runs; with no saved prefs, the panel is unconfigured (no placeholder network calls).
   String baseUrl = '';
@@ -20,6 +32,9 @@ class ServerSettings extends ChangeNotifier {
 
   /// Traffic screen: stacked bars per peer (matches wireguard-ui web) vs aggregate time buckets.
   bool trafficChartPerPeer = false;
+
+  /// Preferencia de tema (claro / oscuro / sistema).
+  AppThemePreference themePreference = AppThemePreference.system;
 
   bool _loaded = false;
 
@@ -52,10 +67,32 @@ class ServerSettings extends ChangeNotifier {
 
     trafficChartPerPeer = p.getBool(_trafficPeerChartKey) ?? false;
     passkeyPublicOrigin = p.getString(_passkeyOriginKey) ?? '';
+    themePreference = _parseThemePreference(p.getString(_themePreferenceKey));
 
     _loaded = true;
     notifyListeners();
   }
+
+  AppThemePreference _parseThemePreference(String? raw) {
+    switch (raw) {
+      case 'light':
+        return AppThemePreference.light;
+      case 'dark':
+        return AppThemePreference.dark;
+      case 'system':
+      default:
+        return AppThemePreference.system;
+    }
+  }
+
+  Future<void> setThemePreference(AppThemePreference value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_themePreferenceKey, value.name);
+    themePreference = value;
+    notifyListeners();
+  }
+
+  ThemeMode get themeMode => themePreference.themeMode;
 
   Future<void> setTrafficChartPerPeer(bool value) async {
     final p = await SharedPreferences.getInstance();

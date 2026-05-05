@@ -67,7 +67,13 @@ class OfflineSnapshotStore {
     }
     if (traffic24h != null) cur['traffic24h'] = _trafficToMap(traffic24h);
     if (peerStats != null) {
-      cur['peer_stats'] = peerStats.map((k, v) => MapEntry(k, {'rx': v.rx, 'tx': v.tx}));
+      cur['peer_stats'] = peerStats.map(
+        (k, v) => MapEntry(k, {
+          'rx': v.rx,
+          'tx': v.tx,
+          'connected': v.connected,
+        }),
+      );
     }
     if (peersSeries24h != null) {
       cur['peers_series_24h'] = _trafficToMap(peersSeries24h);

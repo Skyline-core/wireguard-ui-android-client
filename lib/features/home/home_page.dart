@@ -37,6 +37,8 @@ class HomePageState extends State<HomePage> {
   DashboardStatsVm? stats;
   TrafficSeriesResponseVm? traffic;
   List<WgClientEnvelope> clients = [];
+  /// Live kernel map from [`WguRepository.peerStatsMap`] — includes [PeerTrafficRow.connected].
+  Map<String, PeerTrafficRow> peerStats = {};
 
   /// Peers shown on Home; the rest live under the Peers tab.
   static const int _maxHomePeers = 5;
@@ -71,6 +73,7 @@ class HomePageState extends State<HomePage> {
           stats = snap.dashboard;
           clients = snap.clients;
           traffic = snap.traffic24h;
+          peerStats = snap.peerStats;
         }
       });
       return;
@@ -91,12 +94,14 @@ class HomePageState extends State<HomePage> {
         r.tunnelStatus(),
         r.dashboardStats(),
         r.fetchClients(),
+        r.peerStatsMap(),
       ]);
       if (!mounted) return;
       setState(() {
         tunnel = batch[0] as Map<String, dynamic>;
         stats = batch[1] as DashboardStatsVm;
         clients = batch[2] as List<WgClientEnvelope>;
+        peerStats = batch[3] as Map<String, PeerTrafficRow>;
         loading = false;
       });
       final series = await r.trafficSeries(range: '24h');
@@ -110,6 +115,7 @@ class HomePageState extends State<HomePage> {
         dashboard: stats,
         clients: clients,
         traffic24h: traffic,
+        peerStats: peerStats,
       );
     } catch (e) {
       if (!mounted) return;
@@ -125,6 +131,7 @@ class HomePageState extends State<HomePage> {
             stats = snap.dashboard;
             clients = snap.clients;
             traffic = snap.traffic24h;
+            peerStats = snap.peerStats;
           } else {
             err = formatNetworkError(e);
           }
@@ -154,12 +161,14 @@ class HomePageState extends State<HomePage> {
         r.tunnelStatus(),
         r.dashboardStats(),
         r.trafficSeries(range: '24h'),
+        r.peerStatsMap(),
       ]);
       if (!mounted || loading) return;
       setState(() {
         tunnel = batch[0] as Map<String, dynamic>;
         stats = batch[1] as DashboardStatsVm;
         traffic = batch[2] as TrafficSeriesResponseVm;
+        peerStats = batch[3] as Map<String, PeerTrafficRow>;
       });
     } catch (_) {
       // Keep last good snapshot; full refresh / pull-to-refresh surfaces errors.
@@ -182,10 +191,10 @@ class HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final offline = context.watch<AuthStore>().offlineMode;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.accent,
+          color: context.palette.accent,
           onRefresh: () async {
               if (context.read<AuthStore>().offlineMode) {
                 final ok = await context
@@ -204,7 +213,7 @@ class HomePageState extends State<HomePage> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Text(err!, style: const TextStyle(color: AppColors.red)),
+                    child: Text(err!, style: TextStyle(color: context.palette.red)),
                   ),
                 ),
               if (loading)
@@ -212,7 +221,7 @@ class HomePageState extends State<HomePage> {
                   child: Center(child: CircularProgressIndicator.adaptive()),
                 )
               else ...[
-                SliverToBoxAdapter(child: _heroCard()),
+                SliverToBoxAdapter(child: _heroCard(context)),
                 SliverToBoxAdapter(child: _actions(context, offline)),
                 SliverToBoxAdapter(child: _peerSectionHeader(context, offline)),
                 SliverList(
@@ -232,8 +241,8 @@ class HomePageState extends State<HomePage> {
                           transitionDuration:
                               const Duration(milliseconds: 420),
                           transitionType: ContainerTransitionType.fade,
-                          closedColor: AppColors.surface,
-                          openColor: AppColors.bg,
+                          closedColor: context.palette.surface,
+                          openColor: context.palette.bg,
                           closedElevation: 0,
                           openElevation: 0,
                           closedShape: RoundedRectangleBorder(
@@ -245,6 +254,8 @@ class HomePageState extends State<HomePage> {
                           },
                           tappable: false,
                           closedBuilder: (context, openContainer) {
+                            final st = peerStats[e.client.publicKey];
+                            final vpnOn = e.client.enabled && (st?.connected == true);
                             return PeerPreviewTile(
                               envelope: e,
                               onChanged: () => refresh(silent: true),
@@ -253,6 +264,7 @@ class HomePageState extends State<HomePage> {
                               traffic24hUp: u24,
                               readOnly: offline,
                               onTap: offline ? () {} : openContainer,
+                              onlineHint: vpnOn,
                             );
                           },
                           openBuilder: (context, _) {
@@ -283,7 +295,7 @@ class HomePageState extends State<HomePage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -292,24 +304,24 @@ class HomePageState extends State<HomePage> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    color: context.palette.textPrimary,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
                   'Panel de control',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.search, color: AppColors.textSecondary),
+            icon: Icon(Icons.search, color: context.palette.textSecondary),
             onPressed: offline ? null : widget.onOpenPeers,
           ),
           IconButton(
-            icon: const Icon(Icons.account_circle_outlined,
-                color: AppColors.textSecondary),
+            icon: Icon(Icons.account_circle_outlined,
+                color: context.palette.textSecondary),
             onPressed: offline
                 ? null
                 : () {
@@ -325,7 +337,7 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _heroCard() {
+  Widget _heroCard(BuildContext context) {
     final iface = tunnel?['iface_name']?.toString() ?? 'wg0';
     final up = tunnel?['tunnel_running'] == true;
     final online = stats?.onlineSessions ?? 0;
@@ -344,9 +356,9 @@ class HomePageState extends State<HomePage> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Container(
         decoration: BoxDecoration(
-          gradient: AppColors.heroVpn,
+          gradient: context.palette.heroVpn,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.accent.withValues(alpha: 0.15)),
+          border: Border.all(color: context.palette.accent.withValues(alpha: 0.15)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
         child: Column(
@@ -354,13 +366,13 @@ class HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                const Text(
+                Text(
                   'INTERFAZ ACTIVA',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.8,
-                    color: AppColors.accent,
+                    color: context.palette.accent,
                   ),
                 ),
                 const Spacer(),
@@ -368,10 +380,10 @@ class HomePageState extends State<HomePage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.green.withValues(alpha: 0.12),
+                    color: context.palette.green.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppColors.green.withValues(alpha: 0.2),
+                      color: context.palette.green.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Row(
@@ -379,8 +391,8 @@ class HomePageState extends State<HomePage> {
                       Container(
                         width: 6,
                         height: 6,
-                        decoration: const BoxDecoration(
-                          color: AppColors.green,
+                        decoration: BoxDecoration(
+                          color: context.palette.green,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -390,7 +402,7 @@ class HomePageState extends State<HomePage> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: up ? AppColors.green : AppColors.textMuted,
+                          color: up ? context.palette.green : context.palette.textMuted,
                         ),
                       ),
                     ],
@@ -401,18 +413,18 @@ class HomePageState extends State<HomePage> {
             const SizedBox(height: 14),
             Text(
               iface,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
+                color: context.palette.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Sesiones en línea · $online · Descarga: ${formatBytes(downloadAcum)} · Subida: ${formatBytes(uploadAcum)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: AppColors.accent,
+                color: context.palette.accent,
                 fontFamily: 'monospace',
               ),
             ),
@@ -423,31 +435,31 @@ class HomePageState extends State<HomePage> {
                   child: _miniStat(
                     '$enabled',
                     'habilitados',
-                    AppColors.green,
+                    context.palette.green,
                   ),
                 ),
                 Container(
                   width: 1,
                   height: 36,
-                  color: Colors.white.withValues(alpha: 0.07),
+                  color: context.palette.borderSubtle,
                 ),
                 Expanded(
                   child: _miniStat(
                     '↓ ${formatBitrateBitsPerSecFromBytesPerSec(clientDownloadBps)}',
                     'descarga',
-                    AppColors.accent,
+                    context.palette.accent,
                   ),
                 ),
                 Container(
                   width: 1,
                   height: 36,
-                  color: Colors.white.withValues(alpha: 0.07),
+                  color: context.palette.borderSubtle,
                 ),
                 Expanded(
                   child: _miniStat(
                     '↑ ${formatBitrateBitsPerSecFromBytesPerSec(clientUploadBps)}',
                     'subida',
-                    AppColors.yellow,
+                    context.palette.yellow,
                   ),
                 ),
               ],
@@ -474,9 +486,9 @@ class HomePageState extends State<HomePage> {
         Text(
           lbl.toUpperCase(),
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10,
-            color: AppColors.textMuted,
+            color: context.palette.textMuted,
             letterSpacing: 0.4,
           ),
         ),
@@ -493,8 +505,8 @@ class HomePageState extends State<HomePage> {
             child: OpenContainer<bool?>(
               transitionDuration: const Duration(milliseconds: 420),
               transitionType: ContainerTransitionType.fade,
-              closedColor: AppColors.accent,
-              openColor: AppColors.bg,
+              closedColor: context.palette.accent,
+              openColor: context.palette.bg,
               closedElevation: 0,
               openElevation: 0,
               closedShape: RoundedRectangleBorder(
@@ -510,10 +522,11 @@ class HomePageState extends State<HomePage> {
                   onPressed: offline ? null : openContainer,
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.black,
+                    backgroundColor: context.palette.accent,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimary,
                   ),
-                  icon: const Icon(Icons.add, size: 20),
+                  icon: Icon(Icons.add, size: 20),
                   label: const Text('Nuevo cliente'),
                 );
               },
@@ -589,7 +602,7 @@ class HomePageState extends State<HomePage> {
     bool loading = false,
   }) {
     return Material(
-      color: AppColors.surface2,
+      color: context.palette.surface2,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: (loading || onTap == null) ? null : onTap,
@@ -598,14 +611,14 @@ class HomePageState extends State<HomePage> {
           width: 52,
           height: 52,
           child: loading
-              ? const Padding(
-                  padding: EdgeInsets.all(14),
+              ? Padding(
+                  padding: const EdgeInsets.all(14),
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.accent,
+                    color: context.palette.accent,
                   ),
                 )
-              : Icon(icon, color: AppColors.textSecondary),
+              : Icon(icon, color: context.palette.textSecondary),
         ),
       ),
     );
@@ -616,23 +629,23 @@ class HomePageState extends State<HomePage> {
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
       child: Row(
         children: [
-          const Text(
+          Text(
             'PEERS',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: context.palette.textSecondary,
               letterSpacing: 0.8,
             ),
           ),
           const Spacer(),
           TextButton(
             onPressed: offline ? null : widget.onOpenPeers,
-            child: const Text(
+            child: Text(
               'Ver todos',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: AppColors.accent,
+                color: context.palette.accent,
               ),
             ),
           ),
@@ -660,6 +673,7 @@ class PeerPreviewTile extends StatelessWidget {
   final Future<void> Function() onChanged;
   /// When true (e.g. offline cache mode), taps and the enabled switch are disabled.
   final bool readOnly;
+  /// When [client.enabled] is true, whether the peer has a **recent WireGuard handshake** (VPN connected), from `/api/wg-peer-stats` `connected`.
   final bool? onlineHint;
   /// When true, show traffic totals from `peer_totals` (same [range] as the series request, e.g. 24h).
   final bool show24hTraffic;
@@ -670,116 +684,150 @@ class PeerPreviewTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = envelope.client;
     final ip = c.allocatedIps.isNotEmpty ? c.allocatedIps.first : '—';
-    final online = onlineHint ?? c.enabled;
+    final vpnOn = c.enabled && (onlineHint == true);
+    String statusText;
+    Color statusColor;
+    if (!c.enabled) {
+      statusText = 'Apagado';
+      statusColor = context.palette.textMuted;
+    } else if (vpnOn) {
+      statusText = '● En línea';
+      statusColor = context.palette.green;
+    } else {
+      statusText = 'Desconectado';
+      statusColor = context.palette.textSecondary;
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Material(
-        color: AppColors.surface,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: readOnly ? null : onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(12, 11, 8, 11),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _avatarFor(c.name),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        c.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        ip,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      online ? '● Online' : 'Offline',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: online
-                            ? AppColors.green
-                            : AppColors.textMuted,
-                      ),
-                    ),
-                    if (show24hTraffic) ...[
-                      const SizedBox(height: 4),
-                      const Text(
-                        '24 h',
-                        style: TextStyle(
-                          fontSize: 8,
-                          letterSpacing: 0.3,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        '↓${formatBytes(traffic24hDown)} · ↑${formatBytes(traffic24hUp)}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textMuted,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(width: 8),
-                Switch(
-                  value: c.enabled,
-                  onChanged: readOnly
-                      ? null
-                      : (v) async {
-                    final messenger = ScaffoldMessenger.of(context);
-                    final repo = WguRepository.fromContext(
-                      context.read<AuthStore>(),
-                      context.read<ServerSettings>(),
-                    );
-                    try {
-                      final ok = await repo.setClientEnabled(c.id, v);
-                      if (!context.mounted) return;
-                      if (!ok) {
-                        messenger.showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'No se pudo guardar el estado del peer en el servidor.',
+                    _avatarFor(c.name),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              height: 1.15,
+                              fontWeight: FontWeight.w700,
+                              color: context.palette.textPrimary,
                             ),
                           ),
-                        );
-                        await onChanged();
-                        return;
-                      }
-                      await onChanged();
-                    } catch (e) {
-                      if (!context.mounted) return;
-                      messenger.showSnackBar(
-                        SnackBar(content: Text(formatNetworkError(e))),
-                      );
-                      await onChanged();
-                    }
-                  },
+                          const SizedBox(height: 4),
+                          Text(
+                            statusText,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              height: 1.15,
+                              fontWeight: FontWeight.w700,
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Transform.scale(
+                      scale: 0.88,
+                      alignment: Alignment.topCenter,
+                      child: Switch(
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        value: c.enabled,
+                        onChanged: readOnly
+                            ? null
+                            : (v) async {
+                                final messenger =
+                                    ScaffoldMessenger.of(context);
+                                final repo = WguRepository.fromContext(
+                                  context.read<AuthStore>(),
+                                  context.read<ServerSettings>(),
+                                );
+                                try {
+                                  final ok =
+                                      await repo.setClientEnabled(c.id, v);
+                                  if (!context.mounted) return;
+                                  if (!ok) {
+                                    messenger.showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'No se pudo guardar el estado del peer en el servidor.',
+                                        ),
+                                      ),
+                                    );
+                                    await onChanged();
+                                    return;
+                                  }
+                                  await onChanged();
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text(formatNetworkError(e))),
+                                  );
+                                  await onChanged();
+                                }
+                              },
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  ip,
+                  maxLines: 3,
+                  softWrap: true,
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.28,
+                    color: context.palette.textSecondary,
+                    fontFamily: 'monospace',
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                if (show24hTraffic) ...[
+                  const SizedBox(height: 7),
+                  Text(
+                    '24 h',
+                    style: TextStyle(
+                      fontSize: 9,
+                      letterSpacing: 0.35,
+                      color: context.palette.textMuted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '↓ ${formatBytes(traffic24hDown)}   ·   ↑ ${formatBytes(traffic24hUp)}',
+                    maxLines: 2,
+                    softWrap: true,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1.25,
+                      color: context.palette.textMuted,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -792,8 +840,8 @@ class PeerPreviewTile extends StatelessWidget {
     final hue = name.hashCode.abs() % 360;
     final color = HSLColor.fromAHSL(1, hue.toDouble(), 0.35, 0.55).toColor();
     return Container(
-      width: 40,
-      height: 40,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),

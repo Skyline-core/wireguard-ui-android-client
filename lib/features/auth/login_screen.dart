@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final err = context.watch<AuthStore>().lastError;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -130,15 +130,15 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Inicia sesión en tu panel',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: context.palette.textSecondary),
             ),
             const SizedBox(height: 32),
             TextField(
               controller: _panelUrl,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: context.palette.textPrimary),
               decoration: const InputDecoration(
                 labelText: 'URL del panel',
                 hintText: 'https://tu-dominio.com/wg',
@@ -159,17 +159,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                       });
                     },
-              activeColor: AppColors.accent,
+              activeColor: context.palette.accent,
               checkColor: Colors.black,
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
+              title: Text(
                 'Otro dominio HTTPS para passkeys',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                style: TextStyle(fontSize: 14, color: context.palette.textSecondary),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Si entras por IP/LAN pero la passkey está en otro hostname público.',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.palette.textMuted),
               ),
             ),
             AnimatedCrossFade(
@@ -178,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 padding: const EdgeInsets.only(top: 4, bottom: 8),
                 child: TextField(
                   controller: _passkeyOrigin,
-                  style: const TextStyle(color: AppColors.textPrimary),
+                  style: TextStyle(color: context.palette.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Origen passkey (HTTPS)',
                     hintText: 'https://vpn.ejemplo.net',
@@ -197,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _user,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: context.palette.textPrimary),
               decoration: const InputDecoration(
                 labelText: 'Usuario',
                 helperText:
@@ -210,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _pass,
               obscureText: true,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: context.palette.textPrimary),
               decoration: const InputDecoration(labelText: 'Contraseña'),
               onSubmitted: (_) => _submitPassword(),
             ),
@@ -218,12 +218,12 @@ class _LoginScreenState extends State<LoginScreen> {
             SwitchListTile(
               value: _remember,
               onChanged: (v) => setState(() => _remember = v),
-              activeThumbColor: AppColors.accent,
+              activeThumbColor: context.palette.accent,
               title: const Text('Recordar sesión'),
             ),
             if (err != null) ...[
               const SizedBox(height: 8),
-              Text(err, style: const TextStyle(color: AppColors.red)),
+              Text(err, style: TextStyle(color: context.palette.red)),
             ],
             const SizedBox(height: 24),
             FilledButton(
@@ -239,12 +239,12 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _busy ? null : () => _submitPasskey(),
-              icon: const Icon(Icons.key_outlined),
+              icon: Icon(Icons.key_outlined),
               label: const Text('Entrar con passkey'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
+                foregroundColor: context.palette.textPrimary,
                 side: BorderSide(
-                  color: AppColors.textMuted.withValues(alpha: 0.5),
+                  color: context.palette.textMuted.withValues(alpha: 0.5),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),

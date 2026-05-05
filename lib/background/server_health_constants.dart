@@ -5,9 +5,15 @@ abstract final class ServerHealthConstants {
   static const uniqueName = 'wgui_server_health_periodic';
   static const taskName = 'serverHealthCheck';
 
+  /// Last probe outcome was OK (or unknown → treated as OK). When false, we already
+  /// showed “unreachable” and stay silent until the server responds again.
   static const prefsPrevOk = 'wgui_health_prev_ok';
-  static const prefsLastNotifyMs = 'wgui_health_last_notify_ms';
 
-  /// Minimum gap between repeated “still down” notifications (Android may run the task about every 15 min).
-  static const throttleRepeatMs = 24 * 60 * 60 * 1000;
+  /// Same notification id every time so Android replaces instead of stacking copies.
+  static const unreachableNotificationId = 941001;
+
+  /// Quick GET retries in one run (reduces false “down” from a single timeout / packet loss).
+  static const probeAttempts = 3;
+  static const probeRetryDelay = Duration(seconds: 2);
+  static const connectTimeoutSeconds = 10;
 }

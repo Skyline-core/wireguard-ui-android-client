@@ -199,7 +199,7 @@ class PeersPageState extends State<PeersPage>
     final offline = context.watch<AuthStore>().offlineMode;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       floatingActionButton: offline
           ? null
           : SlideTransition(
@@ -210,8 +210,8 @@ class PeersPageState extends State<PeersPage>
                 child: OpenContainer<bool?>(
                   transitionDuration: const Duration(milliseconds: 420),
                   transitionType: ContainerTransitionType.fade,
-                  closedColor: AppColors.accent,
-                  openColor: AppColors.bg,
+                  closedColor: context.palette.accent,
+                  openColor: context.palette.bg,
                   closedElevation: 6,
                   openElevation: 0,
                   closedShape: RoundedRectangleBorder(
@@ -235,7 +235,7 @@ class PeersPageState extends State<PeersPage>
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.add_rounded, size: 28),
+                        child: Icon(Icons.add_rounded, size: 28),
                       ),
                     );
                   },
@@ -252,7 +252,7 @@ class PeersPageState extends State<PeersPage>
               padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -261,22 +261,22 @@ class PeersPageState extends State<PeersPage>
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
+                            color: context.palette.textPrimary,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           'Clientes registrados',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textSecondary,
+                            color: context.palette.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.search, color: AppColors.textSecondary),
+                    icon: Icon(Icons.search, color: context.palette.textSecondary),
                     onPressed: offline ? null : () {},
                   ),
                 ],
@@ -290,14 +290,14 @@ class PeersPageState extends State<PeersPage>
                 decoration: InputDecoration(
                   hintText: 'Buscar peer, IP…',
                   prefixIcon:
-                      const Icon(Icons.search, color: AppColors.textMuted),
+                      Icon(Icons.search, color: context.palette.textMuted),
                   filled: true,
-                  fillColor: AppColors.surface2,
+                  fillColor: context.palette.surface2,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(28)),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(28),
                     borderSide:
-                        BorderSide(color: Colors.white.withValues(alpha: 0.12)),
+                        BorderSide(color: context.palette.borderSubtle),
                   ),
                 ),
               ),
@@ -325,7 +325,7 @@ class PeersPageState extends State<PeersPage>
             if (_err != null)
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(_err!, style: const TextStyle(color: AppColors.red)),
+                child: Text(_err!, style: TextStyle(color: context.palette.red)),
               ),
             Expanded(
               child: _loading
@@ -333,7 +333,7 @@ class PeersPageState extends State<PeersPage>
                       child: CircularProgressIndicator.adaptive(),
                     )
                   : RefreshIndicator(
-                      color: AppColors.accent,
+                      color: context.palette.accent,
                       onRefresh: () async {
                         if (context.read<AuthStore>().offlineMode) {
                           final ok = await context
@@ -351,10 +351,9 @@ class PeersPageState extends State<PeersPage>
                         itemBuilder: (context, i) {
                           final e = rows[i];
                           final c = e.client;
-                          final tr = _stats[c.publicKey];
-                          final down = tr?.downloadBytes ?? 0;
-                          final up = tr?.uploadBytes ?? 0;
-                          final online = c.enabled && (down + up) > 0;
+                          final vpnConnected =
+                              c.enabled &&
+                                  (_stats[c.publicKey]?.connected == true);
                           final (d24, u24) =
                               _series24h?.windowBytesForPeer(c.publicKey) ??
                                   (0, 0);
@@ -364,8 +363,8 @@ class PeersPageState extends State<PeersPage>
                               transitionDuration:
                                   const Duration(milliseconds: 420),
                               transitionType: ContainerTransitionType.fade,
-                              closedColor: AppColors.surface,
-                              openColor: AppColors.bg,
+                              closedColor: context.palette.surface,
+                              openColor: context.palette.bg,
                               closedElevation: 0,
                               openElevation: 0,
                               closedShape: RoundedRectangleBorder(
@@ -382,7 +381,7 @@ class PeersPageState extends State<PeersPage>
                                   onChanged: () => refresh(silent: true),
                                   onTap: offline ? () {} : openContainer,
                                   readOnly: offline,
-                                  onlineHint: online,
+                                  onlineHint: vpnConnected,
                                   show24hTraffic: _series24h != null,
                                   traffic24hDown: d24,
                                   traffic24hUp: u24,
@@ -412,9 +411,9 @@ class PeersPageState extends State<PeersPage>
         selected: sel,
         onSelected:
             offline ? null : (_) => setState(() => _filter = key),
-        selectedColor: AppColors.accent.withValues(alpha: 0.15),
+        selectedColor: context.palette.accent.withValues(alpha: 0.15),
         labelStyle: TextStyle(
-          color: sel ? AppColors.accent : AppColors.textSecondary,
+          color: sel ? context.palette.accent : context.palette.textSecondary,
           fontWeight: FontWeight.w600,
           fontSize: 12,
         ),

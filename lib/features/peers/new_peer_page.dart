@@ -90,7 +90,7 @@ class _NewPeerPageState extends State<NewPeerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       appBar: AppBar(
         title: const Text('Nuevo peer', style: TextStyle(fontWeight: FontWeight.w800)),
       ),
@@ -114,11 +114,11 @@ class _NewPeerPageState extends State<NewPeerPage> {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: _suggestIp,
-              icon: const Icon(Icons.auto_fix_high, size: 18),
+              icon: Icon(Icons.auto_fix_high, size: 18),
               label: const Text('Sugerir IP (/api/suggest-client-ips)'),
             ),
           ),
-          if (_err != null) Text(_err!, style: const TextStyle(color: AppColors.red)),
+          if (_err != null) Text(_err!, style: TextStyle(color: context.palette.red)),
           const SizedBox(height: 28),
           FilledButton.icon(
             onPressed: _busy ? null : _create,
@@ -128,13 +128,13 @@ class _NewPeerPageState extends State<NewPeerPage> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.check),
+                : Icon(Icons.check),
             label: const Text('Crear en wireguard-ui'),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'After creating, tap Apply (banner or web) if the server does not auto-apply wg.conf.',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.palette.textMuted),
           ),
         ],
       ),

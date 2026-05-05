@@ -148,10 +148,10 @@ class TrafficPageState extends State<TrafficPage> {
     final offline = context.watch<AuthStore>().offlineMode;
     final v = vm;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       body: SafeArea(
         child: RefreshIndicator(
-          color: AppColors.accent,
+          color: context.palette.accent,
           onRefresh: () async {
             if (context.read<AuthStore>().offlineMode) {
               final ok = await context
@@ -179,7 +179,7 @@ class TrafficPageState extends State<TrafficPage> {
                     if (err != null)
                       Padding(
                         padding: const EdgeInsets.all(16),
-                        child: Text(err!, style: const TextStyle(color: AppColors.red)),
+                        child: Text(err!, style: TextStyle(color: context.palette.red)),
                       ),
                     if (v != null) ...[
                       _liveCard(v),
@@ -201,17 +201,17 @@ class TrafficPageState extends State<TrafficPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Tráfico',
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 22,
-              color: AppColors.textPrimary,
+              color: context.palette.textPrimary,
             ),
           ),
           Text(
             vm == null ? '…' : 'Actualizado · age ${vm!.updatedAgeSecs}s',
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
           ),
         ],
       ),
@@ -227,26 +227,22 @@ class TrafficPageState extends State<TrafficPage> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       child: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0D1F14), Color(0xFF101A10)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: context.palette.trafficLiveCardGradient,
           borderRadius: BorderRadius.circular(24),
           border:
-              Border.all(color: AppColors.green.withValues(alpha: 0.15)),
+              Border.all(color: context.palette.green.withValues(alpha: 0.15)),
         ),
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'VELOCIDAD EN TIEMPO REAL',
               style: TextStyle(
                 letterSpacing: 0.8,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: AppColors.green,
+                color: context.palette.green,
               ),
             ),
             const SizedBox(height: 12),
@@ -258,17 +254,17 @@ class TrafficPageState extends State<TrafficPage> {
                       Text(
                         download,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
-                          color: AppColors.accent,
+                          color: context.palette.accent,
                           fontFamily: 'monospace',
                         ),
                       ),
-                      const Text(
+                      Text(
                         'descarga',
                         style:
-                            TextStyle(fontSize: 11, color: AppColors.textMuted),
+                            TextStyle(fontSize: 11, color: context.palette.textMuted),
                       ),
                     ],
                   ),
@@ -279,17 +275,17 @@ class TrafficPageState extends State<TrafficPage> {
                       Text(
                         upload,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 18,
-                          color: AppColors.yellow,
+                          color: context.palette.yellow,
                           fontFamily: 'monospace',
                         ),
                       ),
-                      const Text(
+                      Text(
                         'subida',
                         style:
-                            TextStyle(fontSize: 11, color: AppColors.textMuted),
+                            TextStyle(fontSize: 11, color: context.palette.textMuted),
                       ),
                     ],
                   ),
@@ -321,7 +317,7 @@ class TrafficPageState extends State<TrafficPage> {
     final sel = range == key;
     return Expanded(
       child: Material(
-        color: sel ? AppColors.accent.withValues(alpha: 0.14) : AppColors.surface2,
+        color: sel ? context.palette.accent.withValues(alpha: 0.14) : context.palette.surface2,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -338,7 +334,7 @@ class TrafficPageState extends State<TrafficPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: sel ? FontWeight.w800 : FontWeight.w600,
-                color: sel ? AppColors.accent : AppColors.textMuted,
+                color: sel ? context.palette.accent : context.palette.textMuted,
               ),
             ),
           ),
@@ -363,24 +359,24 @@ class TrafficPageState extends State<TrafficPage> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.palette.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: context.palette.borderSubtle),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               'Ancho de banda · agregado',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: AppColors.textPrimary,
+                color: context.palette.textPrimary,
               ),
             ),
             Text(
               _rangeSubtitle(),
-              style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 10, color: context.palette.textMuted),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -399,8 +395,8 @@ class TrafficPageState extends State<TrafficPage> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                AppColors.accent.withValues(alpha: 0.9),
-                                AppColors.accent.withValues(alpha: 0.35),
+                                context.palette.accent.withValues(alpha: 0.9),
+                                context.palette.accent.withValues(alpha: 0.35),
                               ],
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
@@ -418,11 +414,11 @@ class TrafficPageState extends State<TrafficPage> {
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 Text('inicio',
-                    style: TextStyle(fontSize: 9, color: AppColors.textMuted)),
+                    style: TextStyle(fontSize: 9, color: context.palette.textMuted)),
                 Text('ahora',
-                    style: TextStyle(fontSize: 9, color: AppColors.textMuted)),
+                    style: TextStyle(fontSize: 9, color: context.palette.textMuted)),
               ],
             ),
           ],
@@ -441,13 +437,13 @@ class TrafficPageState extends State<TrafficPage> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            border: Border.all(color: context.palette.borderSubtle),
           ),
-          child: const Text(
+          child: Text(
             'Sin datos por peer para este rango.',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            style: TextStyle(color: context.palette.textMuted, fontSize: 13),
           ),
         ),
       );
@@ -469,24 +465,24 @@ class TrafficPageState extends State<TrafficPage> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.palette.surface,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(color: context.palette.borderSubtle),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               'Ancho de banda',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
-                color: AppColors.textPrimary,
+                color: context.palette.textPrimary,
               ),
             ),
             Text(
               _rangeSubtitle(),
-              style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 10, color: context.palette.textMuted),
             ),
             const SizedBox(height: 10),
             SizedBox(
@@ -495,7 +491,7 @@ class TrafficPageState extends State<TrafficPage> {
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: context.palette.borderSubtle,
                     ),
                   ),
                 ),
@@ -527,7 +523,7 @@ class TrafficPageState extends State<TrafficPage> {
                                             (p.downloadBytes / maxB),
                                       ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.red
+                                        color: context.palette.red
                                             .withValues(alpha: 0.95),
                                         borderRadius:
                                             const BorderRadius.vertical(
@@ -543,8 +539,8 @@ class TrafficPageState extends State<TrafficPage> {
                                             0.5 *
                                             (p.uploadBytes / maxB),
                                       ),
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.yellow,
+                                      decoration: BoxDecoration(
+                                        color: context.palette.yellow,
                                         borderRadius: BorderRadius.vertical(
                                           bottom: Radius.circular(3),
                                         ),
@@ -568,17 +564,17 @@ class TrafficPageState extends State<TrafficPage> {
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: AppColors.red.withValues(alpha: 0.95),
+                    color: context.palette.red.withValues(alpha: 0.95),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Text(
+                Text(
                   'Descarga (arriba)',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    color: context.palette.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -586,17 +582,17 @@ class TrafficPageState extends State<TrafficPage> {
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: AppColors.yellow,
+                    color: context.palette.yellow,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Text(
+                Text(
                   'Subida (abajo)',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                    color: context.palette.textSecondary,
                   ),
                 ),
               ],
@@ -608,7 +604,7 @@ class TrafficPageState extends State<TrafficPage> {
                 fontSize: 9,
                 fontStyle: FontStyle.italic,
                 height: 1.35,
-                color: AppColors.textMuted.withValues(alpha: 0.95),
+                color: context.palette.textMuted.withValues(alpha: 0.95),
               ),
             ),
           ],
@@ -645,25 +641,25 @@ class TrafficPageState extends State<TrafficPage> {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: context.palette.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             val,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 17,
-              color: AppColors.accent,
+              color: context.palette.accent,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             lbl,
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 10, color: context.palette.textMuted),
           ),
         ],
       ),
@@ -688,10 +684,10 @@ class TrafficPageState extends State<TrafficPage> {
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 10),
           child: Text(
             v.peerTotals.isNotEmpty ? 'POR PEER (ventana)' : 'POR PEER (kernel)',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
-              color: AppColors.textSecondary,
+              color: context.palette.textSecondary,
               fontSize: 12,
             ),
           ),
@@ -699,7 +695,7 @@ class TrafficPageState extends State<TrafficPage> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Material(
-            color: AppColors.surface,
+            color: context.palette.surface,
             borderRadius: BorderRadius.circular(20),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -729,19 +725,19 @@ class TrafficPageState extends State<TrafficPage> {
     return Column(
       children: [
         if (divider)
-          Divider(height: 1, thickness: 1, color: Colors.white.withValues(alpha: 0.06)),
+          Divider(height: 1, thickness: 1, color: context.palette.borderSubtle),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              SizedBox(width: 22, child: Text('$rank', style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.bold))),
+              SizedBox(width: 22, child: Text('$rank', style: TextStyle(color: context.palette.textMuted, fontWeight: FontWeight.bold))),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       _resolveName(p.publicKey),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
                     ClipRRect(
@@ -749,9 +745,8 @@ class TrafficPageState extends State<TrafficPage> {
                       child: LinearProgressIndicator(
                         value: frac.clamp(0.06, 1.0),
                         minHeight: 3,
-                        color: AppColors.accent,
-                        backgroundColor:
-                            Colors.white.withValues(alpha: 0.08),
+                        color: context.palette.accent,
+                        backgroundColor: context.palette.surface2,
                       ),
                     ),
                   ],
@@ -763,18 +758,18 @@ class TrafficPageState extends State<TrafficPage> {
                 children: [
                   Text(
                     '↓ ${formatBytes(p.downloadBytes)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: AppColors.accent,
+                      color: context.palette.accent,
                       fontFamily: 'monospace',
                     ),
                   ),
                   Text(
                     '↑ ${formatBytes(p.uploadBytes)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.yellow,
+                      color: context.palette.yellow,
                       fontFamily: 'monospace',
                     ),
                   ),

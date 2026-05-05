@@ -166,7 +166,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       // IndexedStack avoids sliding the entire Scaffold (header + lists) like PageView does — no black
       // gutter during gestures; tabs switch from the bottom nav only.
       body: IndexedStack(
@@ -187,7 +187,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
             builder: (context, auth, _) {
               if (!auth.offlineMode) return const SizedBox.shrink();
               return Material(
-                color: AppColors.red.withValues(alpha: 0.12),
+                color: context.palette.red.withValues(alpha: 0.12),
                 child: SafeArea(
                   top: false,
                   child: Padding(
@@ -196,7 +196,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.wifi_off_rounded,
-                            size: 22, color: AppColors.red),
+                            size: 22, color: context.palette.red),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -205,7 +205,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                             style: TextStyle(
                               fontSize: 11.5,
                               height: 1.35,
-                              color: AppColors.red.withValues(alpha: 0.92),
+                              color: context.palette.red.withValues(alpha: 0.92),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -223,7 +223,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                 return const SizedBox.shrink();
               }
               return Material(
-                color: AppColors.surface,
+                color: context.palette.surface,
                 child: SafeArea(
                   top: false,
                   child: Padding(
@@ -232,7 +232,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                     child: Row(
                       children: [
                         Icon(Icons.engineering_outlined,
-                            size: 22, color: AppColors.yellow),
+                            size: 22, color: context.palette.yellow),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -240,7 +240,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                             style: TextStyle(
                               fontSize: 11.5,
                               height: 1.25,
-                              color: AppColors.textSecondary,
+                              color: context.palette.textSecondary,
                             ),
                           ),
                         ),
@@ -285,12 +285,12 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                             ),
                           ),
                           child: wg.applying
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: AppColors.accent,
+                                    color: context.palette.accent,
                                   ),
                                 )
                               : const Text('Aplicar'),
@@ -304,29 +304,29 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ),
           NavigationBar(
             height: 72,
-            backgroundColor: AppColors.surface,
-            indicatorColor: AppColors.accent.withValues(alpha: 0.14),
+            backgroundColor: context.palette.surface,
+            indicatorColor: context.palette.accent.withValues(alpha: 0.14),
             selectedIndex: _index,
             onDestinationSelected: (i) => _setTab(i),
             destinations: [
               NavigationDestination(
                 icon: Icon(Icons.grid_view_rounded,
-                    color: _index == 0 ? AppColors.accent : AppColors.textMuted),
+                    color: _index == 0 ? context.palette.accent : context.palette.textMuted),
                 label: _titles[0],
               ),
               NavigationDestination(
                 icon: Icon(Icons.people_outline,
-                    color: _index == 1 ? AppColors.accent : AppColors.textMuted),
+                    color: _index == 1 ? context.palette.accent : context.palette.textMuted),
                 label: _titles[1],
               ),
               NavigationDestination(
                 icon: Icon(Icons.show_chart_rounded,
-                    color: _index == 2 ? AppColors.accent : AppColors.textMuted),
+                    color: _index == 2 ? context.palette.accent : context.palette.textMuted),
                 label: _titles[2],
               ),
               NavigationDestination(
                 icon: Icon(Icons.settings_input_antenna,
-                    color: _index == 3 ? AppColors.accent : AppColors.textMuted),
+                    color: _index == 3 ? context.palette.accent : context.palette.textMuted),
                 label: _titles[3],
               ),
             ],

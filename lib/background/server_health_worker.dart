@@ -39,47 +39,69 @@ abstract final class ServerHealthWorker {
     if (apiPrefix.isEmpty) {
       return;
     }
-    var reachable = false;
-    try {
-      final dio = Dio(
-        BaseOptions(
-          connectTimeout: const Duration(seconds: 12),
-          sendTimeout: const Duration(seconds: 12),
-          receiveTimeout: const Duration(seconds: 12),
-          validateStatus: (c) => c != null && c > 0,
-          followRedirects: true,
-          maxRedirects: 8,
-          responseType: ResponseType.plain,
-        ),
-      );
-      await dio.get<dynamic>(
-        '${_normalizePrefix(apiPrefix)}/api/ui-nav-hints',
-      );
-      reachable = true;
-    } catch (_) {
-      reachable = false;
-    }
+    final apiUrl =
+        '${_normalizePrefix(apiPrefix)}/api/ui-nav-hints';
+    final reachable = await _probeReachable(apiUrl);
 
-    final now = DateTime.now().millisecondsSinceEpoch;
     final prevOk = prefs.getBool(ServerHealthConstants.prefsPrevOk) ?? true;
 
     if (reachable) {
+      if (!prevOk) {
+        await _cancelUnreachableNotification();
+      }
       await prefs.setBool(ServerHealthConstants.prefsPrevOk, true);
       return;
     }
 
+    // Still down: notify at most once per outage (transition OK → fail only).
     if (prevOk) {
       await _showUnreachableNotification();
       await prefs.setBool(ServerHealthConstants.prefsPrevOk, false);
-      await prefs.setInt(ServerHealthConstants.prefsLastNotifyMs, now);
-      return;
     }
+  }
 
-    final lastNotify = prefs.getInt(ServerHealthConstants.prefsLastNotifyMs) ?? 0;
-    if (now - lastNotify >= ServerHealthConstants.throttleRepeatMs) {
-      await _showUnreachableNotification();
-      await prefs.setInt(ServerHealthConstants.prefsLastNotifyMs, now);
+  /// Several attempts in one worker run to avoid false positives from a single
+  /// timeout, DNS blip, or packet loss on mobile networks.
+  static Future<bool> _probeReachable(String url) async {
+    final dio = Dio(
+      BaseOptions(
+        connectTimeout: Duration(
+          seconds: ServerHealthConstants.connectTimeoutSeconds,
+        ),
+        sendTimeout: Duration(
+          seconds: ServerHealthConstants.connectTimeoutSeconds,
+        ),
+        receiveTimeout: Duration(
+          seconds: ServerHealthConstants.connectTimeoutSeconds,
+        ),
+        validateStatus: (c) => c != null && c > 0,
+        followRedirects: true,
+        maxRedirects: 8,
+        responseType: ResponseType.plain,
+      ),
+    );
+    for (var attempt = 0;
+        attempt < ServerHealthConstants.probeAttempts;
+        attempt++) {
+      try {
+        await dio.get<dynamic>(url);
+        return true;
+      } catch (_) {
+        if (attempt < ServerHealthConstants.probeAttempts - 1) {
+          await Future<void>.delayed(ServerHealthConstants.probeRetryDelay);
+        }
+      }
     }
+    return false;
+  }
+
+  static Future<void> _cancelUnreachableNotification() async {
+    const androidInit =
+        AndroidInitializationSettings('ic_wireguard_notification');
+    const init = InitializationSettings(android: androidInit);
+    final plugin = FlutterLocalNotificationsPlugin();
+    await plugin.initialize(init);
+    await plugin.cancel(ServerHealthConstants.unreachableNotificationId);
   }
 
   static Future<void> _showUnreachableNotification() async {
@@ -101,7 +123,7 @@ abstract final class ServerHealthWorker {
     );
 
     await plugin.show(
-      941001,
+      ServerHealthConstants.unreachableNotificationId,
       'Cannot reach panel',
       'Your WireGuard UI server is unreachable. Check network or the panel.',
       NotificationDetails(
@@ -111,7 +133,7 @@ abstract final class ServerHealthWorker {
           channelDescription: 'Client and server alerts',
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
-          color: AppColors.accent,
+          color: kAppAccentColor,
         ),
       ),
     );

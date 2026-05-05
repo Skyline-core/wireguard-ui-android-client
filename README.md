@@ -17,7 +17,7 @@ Android **Flutter** client for **[WireGuard UI](https://github.com/Skyline-core/
 
 ### Main shell and navigation
 
-- **Bottom navigation** with four areas: **Home**, **Peers**, **Traffic**, and **Settings**, using **shared-axis** transitions between tabs.
+- **Bottom navigation** with four areas: **Home**, **Peers**, **Traffic**, and **Settings**. Tabs use an `**IndexedStack`** so each screen stays mounted (no horizontal swipe); switching is instant from the bar.
 - **Apply config** banner (when the server reports pending WireGuard changes): reminds you to apply `wg.conf` from the panel workflow, consistent with the web UI.
 - **Offline mode**: if the device loses the server while the session is still valid, the app can show **cached** dashboard / peer / traffic snapshots (read-only). A **pull-to-refresh** gesture and **returning from background** attempt to **reconnect** immediately; a periodic retry still runs while offline.
 
@@ -45,6 +45,7 @@ Android **Flutter** client for **[WireGuard UI](https://github.com/Skyline-core/
 
 ### Settings and profile
 
+- **Appearance (theme)** in **Settings → Apariencia**: choose **Light**, **Dark**, or **Automatic**. Automatic follows the device **system** light/dark setting (same as many Android apps). The choice is stored on the device and applies across the whole app after login.
 - **Server / tunnel readouts** and links to **Profile** (display name, email, password, Passkeys management) and **Logs** when available.
 - **Push notifications** toggle: registers or unregisters the device FCM token with the server (`/api/push/register` / `/api/push/unregister`) when Firebase is configured on both sides.
 - **Realtime monitoring** toggle for admins (maps to server **realtime stats** / logs nav hints).
@@ -177,10 +178,10 @@ Release signing uses `**android/key.properties**` and a keystore file when prese
 
 ## Implementation notes (for developers)
 
-- Shell UI with **shared-axis** tab transitions (`animations` package).
+- Shell: `**IndexedStack`** for the four main tabs; theme-aware chrome via `**ThemeExtension<AppPalette>**` in `**lib/core/theme/app_theme.dart`** (`buildAppLightTheme` / `buildAppDarkTheme`). UI colors use `**context.palette`** (not hard-coded dark-only constants). `**MaterialApp**` in `**lib/app.dart**` reads `**ThemeMode**` from `**ServerSettings**` (`**themePreference**`; SharedPreferences key `**wgui_theme_preference**` with values `**system**`, `**light**`, or `**dark**`).
 - **Cookie-based session** (Dio + persistent `cookie_jar`).
 - `**WguRepository`** and Dart models aligned with WireGuard UI JSON.
-- **Firebase Cloud Messaging** optional: register at `**/api/push/register`** from **Settings** when alerts are enabled. Requires `**google-services.json`** in `**android/app/**` and FCM configured on the **WireGuard UI** server (service account JSON — not the same file as the client).
+- **Firebase Cloud Messaging** optional: register at `**/api/push/register`** from **Settings** when alerts are enabled. Requires `**google-services.json`** in `**android/app/`** and FCM configured on the **WireGuard UI** server (service account JSON — not the same file as the client).
 
 ---
 
@@ -251,9 +252,9 @@ Operational checklist:
 
 ## Firebase (push)
 
-1. In [Firebase Console](https://console.firebase.google.com/), add an Android app whose **package name** matches `**applicationId`** in `android/app/build.gradle.kts` (default: `**com.wireguardui.wireguard_ui_client**`).
-2. Download `**google-services.json**` into `**android/app/**`. The Google Services Gradle plugin is applied only when that file exists.
-3. On **WireGuard UI**, configure the Firebase **service account** JSON and `**FCM_CREDENTIALS_FILE`** / `**GOOGLE_APPLICATION_CREDENTIALS**` — that file is **not** `google-services.json`.
+1. In [Firebase Console](https://console.firebase.google.com/), add an Android app whose **package name** matches `**applicationId`** in `android/app/build.gradle.kts` (default: `**com.wireguardui.wireguard_ui_client`**).
+2. Download `**google-services.json`** into `**android/app/**`. The Google Services Gradle plugin is applied only when that file exists.
+3. On **WireGuard UI**, configure the Firebase **service account** JSON and `**FCM_CREDENTIALS_FILE`** / `**GOOGLE_APPLICATION_CREDENTIALS`** — that file is **not** `google-services.json`.
 
 After install: sign in → **Settings** → enable **Push notifications** and grant permission on Android 13+. Sign-out calls `**/api/push/unregister`**.
 
@@ -261,8 +262,8 @@ After install: sign in → **Settings** → enable **Push notifications** and gr
 
 ## API mapping in this repo
 
-- Endpoint constants: `**lib/api/backend_endpoints.dart**`
-- Calls and models: `**lib/api/wgu_repository.dart**`
+- Endpoint constants: `**lib/api/backend_endpoints.dart`**
+- Calls and models: `**lib/api/wgu_repository.dart`**
 
 Default examples in code often assume HTTPS with a path prefix such as `**/wg**`; your deployment may differ — set **Base path** in the login / settings flow accordingly.
 
@@ -270,4 +271,4 @@ Default examples in code often assume HTTPS with a path prefix such as `**/wg**`
 
 ## License
 
-**`LICENSE`**.
+This project is licensed under the **GNU General Public License v3.0** (GPL-3.0). Read the full terms here: **[LICENSE** (branch `main` on GitHub)](https://github.com/Skyline-core/wireguard-ui-android-client/blob/main/LICENSE). The same file is at the repo root as `[LICENSE](LICENSE)` when you clone the project.

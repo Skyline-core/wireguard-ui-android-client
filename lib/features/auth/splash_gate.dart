@@ -41,9 +41,9 @@ class _SplashGateState extends State<SplashGate> {
     // Spinner only: the icon was already shown on the native splash screen (Android 12+).
     // Repeating the SVG in Flutter used black fill and looked like a clipped/invisible second logo.
     if (_busy || !auth.checked) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF0F0F0F),
-        body: Center(child: CircularProgressIndicator.adaptive()),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       );
     }
     return auth.ready ? const MainShell() : const LoginScreen();

@@ -27,10 +27,14 @@ class ProfilePasskeysSnapshot {
   ProfilePasskeysSnapshot({
     required this.username,
     required this.passkeys,
+    this.passkeysEnabled = true,
   });
 
   final String username;
   final List<PasskeyItemVm> passkeys;
+
+  /// Same flag as the panel (`passkeysEnabled` / global Passkeys). Older servers omit → treated as enabled.
+  final bool passkeysEnabled;
 }
 
 class PasskeyItemVm {

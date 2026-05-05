@@ -112,14 +112,14 @@ class SettingsPageState extends State<SettingsPage> {
     final offline = auth.offlineMode;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: context.palette.bg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               child: RefreshIndicator(
-                color: AppColors.accent,
+                color: context.palette.accent,
                 onRefresh: () async {
                   if (offline) {
                     final ok = await auth.tryReconnect(cfg);
@@ -138,20 +138,84 @@ class SettingsPageState extends State<SettingsPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                             child: Text(
                               'Ajustes',
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 22,
-                                color: AppColors.textPrimary,
+                                color: context.palette.textPrimary,
                               ),
                             ),
                           ),
                           _hero(context, user, cfg.originNormalized),
+                          _sectionTitle('Apariencia'),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Material(
+                              color: context.palette.surface,
+                              borderRadius: BorderRadius.circular(20),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tema',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                        color: context.palette.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Automático sigue el modo claro u oscuro del teléfono.',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: context.palette.textMuted,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SegmentedButton<AppThemePreference>(
+                                      segments: [
+                                        ButtonSegment(
+                                          value: AppThemePreference.light,
+                                          icon: Icon(Icons.light_mode_outlined,
+                                              size: 18,
+                                              color: context.palette.textSecondary),
+                                          label: const Text('Claro'),
+                                        ),
+                                        ButtonSegment(
+                                          value: AppThemePreference.dark,
+                                          icon: Icon(Icons.dark_mode_outlined,
+                                              size: 18,
+                                              color: context.palette.textSecondary),
+                                          label: const Text('Oscuro'),
+                                        ),
+                                        ButtonSegment(
+                                          value: AppThemePreference.system,
+                                          icon: Icon(
+                                              Icons.brightness_auto_outlined,
+                                              size: 18,
+                                              color: context.palette.textSecondary),
+                                          label: const Text('Automático'),
+                                        ),
+                                      ],
+                                      selected: {cfg.themePreference},
+                                      onSelectionChanged: (s) {
+                                        if (s.isEmpty) return;
+                                        cfg.setThemePreference(s.first);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                           _sectionTitle('Servidor'),
-                          _card(children: [
+                          _card(context, children: [
                             _tile(Icons.dns, 'Interfaz WireGuard',
                                 tunnel?['iface_name']?.toString() ?? '—'),
                             _tile(
@@ -163,7 +227,7 @@ class SettingsPageState extends State<SettingsPage> {
                             SwitchListTile(
                               secondary: Icon(
                                 Icons.podcasts_outlined,
-                                color: AppColors.accent.withValues(alpha: 0.9),
+                                color: context.palette.accent.withValues(alpha: 0.9),
                               ),
                               title: const Text(
                                   'Monitoreo en vivo (logs y estadísticas)'),
@@ -175,7 +239,7 @@ class SettingsPageState extends State<SettingsPage> {
                               onChanged: loading || savingRealtime
                                   ? null
                                   : (v) => _setRealtimeLogs(v),
-                              activeThumbColor: AppColors.accent,
+                              activeThumbColor: context.palette.accent,
                             ),
                             if (savingRealtime)
                               const Padding(
@@ -187,10 +251,10 @@ class SettingsPageState extends State<SettingsPage> {
                             ListTile(
                               leading: Icon(Icons.terminal,
                                   color:
-                                      AppColors.accent.withValues(alpha: 0.9)),
+                                      context.palette.accent.withValues(alpha: 0.9)),
                               title: const Text('Logs del sistema'),
                               subtitle: const Text('/api/system-logs'),
-                              trailing: const Icon(Icons.chevron_right),
+                              trailing: Icon(Icons.chevron_right),
                               onTap: () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
                                     builder: (_) => const LogsPage()),
@@ -198,47 +262,47 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                           ]),
                           _sectionTitle('Cliente API'),
-                          _card(children: [
+                          _card(context, children: [
                             ListTile(
-                              leading: const Icon(Icons.link,
-                                  color: AppColors.accent),
+                              leading: Icon(Icons.link,
+                                  color: context.palette.accent),
                               title: const Text('Origen del servidor'),
                               subtitle: Text(
                                 cfg.originNormalized,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 12,
-                                  color: AppColors.textSecondary,
+                                  color: context.palette.textSecondary,
                                 ),
                               ),
                             ),
                             ListTile(
-                              leading: const Icon(Icons.http,
-                                  color: AppColors.accent),
+                              leading: Icon(Icons.http,
+                                  color: context.palette.accent),
                               title: const Text('API (origen + base path)'),
                               subtitle: Text(
                                 cfg.apiPrefix,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontFamily: 'monospace', fontSize: 11),
                               ),
                             ),
                             ListTile(
                               leading: Icon(Icons.key_outlined,
-                                  color: AppColors.accent.withValues(alpha: 0.85)),
+                                  color: context.palette.accent.withValues(alpha: 0.85)),
                               title: const Text('Origen passkey (opcional)'),
                               subtitle: Text(
                                 cfg.passkeyPublicOrigin.trim().isEmpty
                                     ? 'No definido'
                                     : cfg.passkeyPublicOrigin,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontFamily: 'monospace',
                                     fontSize: 11,
-                                    color: AppColors.textSecondary,
+                                    color: context.palette.textSecondary,
                                 ),
                               ),
                             ),
                             ListTile(
-                              leading: const Icon(Icons.edit_outlined),
+                              leading: Icon(Icons.edit_outlined),
                               title: const Text('Cambiar base path'),
                               subtitle: const Text(
                                 'El dominio o IP no se edita aquí; solo la ruta del panel.',
@@ -248,11 +312,11 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                           ]),
                           _sectionTitle('Aplicación'),
-                          _card(children: [
+                          _card(context, children: [
                             SwitchListTile(
                               value: cfg.trafficChartPerPeer,
                               onChanged: (v) => cfg.setTrafficChartPerPeer(v),
-                              activeThumbColor: AppColors.accent,
+                              activeThumbColor: context.palette.accent,
                               title: const Text('Mostrar gráfica por peer'),
                               subtitle: const Text(
                                 'En Tráfico, barras apiladas por cliente (como el panel web). Desactivado: gráfica agregada por tiempo.',
@@ -268,10 +332,10 @@ class SettingsPageState extends State<SettingsPage> {
                                   v,
                                 );
                               },
-                              activeThumbColor: AppColors.accent,
+                              activeThumbColor: context.palette.accent,
                               secondary: Icon(Icons.notifications_active_outlined,
                                   color:
-                                      AppColors.yellow.withValues(alpha: 0.9)),
+                                      context.palette.yellow.withValues(alpha: 0.9)),
                               title: const Text('Notificaciones push'),
                               subtitle: const Text(
                                 'Peers y túnel vía FCM (el servidor limita la frecuencia)',
@@ -283,10 +347,10 @@ class SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     _sectionTitle('Sesión'),
-                    _card(children: [
+                    _card(context, children: [
                       ListTile(
                         leading: Icon(Icons.logout,
-                            color: AppColors.red.withValues(alpha: 0.9)),
+                            color: context.palette.red.withValues(alpha: 0.9)),
                         title: const Text('Cerrar sesión'),
                         subtitle: Text('Usuario: $user'),
                         onTap: () async {
@@ -319,32 +383,32 @@ class SettingsPageState extends State<SettingsPage> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.accent,
+                            color: context.palette.accent,
                             decoration: TextDecoration.underline,
                             decorationColor:
-                                AppColors.accent.withValues(alpha: 0.45),
+                                context.palette.accent.withValues(alpha: 0.45),
                           ),
                         ),
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(28, 8, 28, 0),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 8, 28, 0),
                       child: Text(
                         'v0.1050325b',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textMuted,
+                          color: context.palette.textMuted,
                         ),
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(28, 14, 28, 28),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 14, 28, 28),
                       child: Text(
                         'Cliente Flutter · WireGuard UI',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                            fontSize: 11, color: AppColors.textMuted),
+                            fontSize: 11, color: context.palette.textMuted),
                       ),
                     ),
                   ],
@@ -376,11 +440,11 @@ class SettingsPageState extends State<SettingsPage> {
           child: Ink(
             decoration: BoxDecoration(
               gradient: LinearGradient(colors: [
-                const Color(0xFF1A1A2E),
-                AppColors.surface,
+                context.palette.heroBannerTop,
+                context.palette.surface,
               ]),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.accent.withValues(alpha: 0.12)),
+              border: Border.all(color: context.palette.accent.withValues(alpha: 0.12)),
             ),
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -391,8 +455,8 @@ class SettingsPageState extends State<SettingsPage> {
                     height: 56,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(18),
-                      gradient: const LinearGradient(
-                        colors: [AppColors.accentStrong, AppColors.accent],
+                      gradient: LinearGradient(
+                        colors: [context.palette.accentStrong, context.palette.accent],
                       ),
                     ),
                     alignment: Alignment.center,
@@ -400,7 +464,7 @@ class SettingsPageState extends State<SettingsPage> {
                       initials.length >= 2
                           ? initials.substring(0, 2).toUpperCase()
                           : (initials.isEmpty ? 'WG' : initials.toUpperCase()),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                           color: Colors.white),
@@ -412,19 +476,19 @@ class SettingsPageState extends State<SettingsPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(initials,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 18)),
                         Text(host,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.accent)),
+                                color: context.palette.accent)),
                       ],
                     ),
                   ),
                   Icon(Icons.chevron_right,
                       color:
-                          AppColors.textSecondary.withValues(alpha: 0.85)),
+                          context.palette.textSecondary.withValues(alpha: 0.85)),
                 ],
               ),
             ),
@@ -438,37 +502,35 @@ class SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
         child: Text(
           t.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 0.8,
             fontSize: 11,
-            color: AppColors.textMuted,
+            color: context.palette.textMuted,
           ),
         ),
       );
 
-  Widget _card({required List<Widget> children}) {
+  Widget _card(BuildContext context, {required List<Widget> children}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Material(
-        color: AppColors.surface,
+        color: context.palette.surface,
         borderRadius: BorderRadius.circular(20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Column(children: divide(children)),
+          child: Column(children: divide(context, children)),
         ),
       ),
     );
   }
 
-  List<Widget> divide(List<Widget> items) {
+  List<Widget> divide(BuildContext context, List<Widget> items) {
+    final line = context.palette.borderSubtle;
     final out = <Widget>[];
     for (var i = 0; i < items.length; i++) {
       if (i > 0) {
-        out.add(Divider(
-            height: 1,
-            thickness: 1,
-            color: Colors.white.withValues(alpha: 0.05)));
+        out.add(Divider(height: 1, thickness: 1, color: line));
       }
       out.add(items[i]);
     }
@@ -505,21 +567,21 @@ class SettingsPageState extends State<SettingsPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
+                      Text(
                         'Servidor (solo lectura)',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted,
+                          color: context.palette.textMuted,
                         ),
                       ),
                       const SizedBox(height: 6),
                       SelectableText(
                         cfg.originNormalized,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'monospace',
                           fontSize: 13,
-                          color: AppColors.accent,
+                          color: context.palette.accent,
                         ),
                       ),
                       const SizedBox(height: 16),

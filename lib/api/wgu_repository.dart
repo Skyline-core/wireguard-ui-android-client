@@ -13,6 +13,9 @@ import 'models/system_logs.dart';
 import 'models/traffic_series.dart';
 import 'models/profile_models.dart';
 
+/// Same header as wireguard-ui `util.WebAuthnPublicOriginHeader` / [AuthStore] passkey login.
+const _kWebAuthnPublicOriginHeader = 'X-WGUI-WebAuthn-Public-Origin';
+
 /// REST access to wireguard-ui handlers registered in [`main.go`](../../wireguard-ui/main.go).
 class WguRepository {
   WguRepository(this._dio, this.apiPrefix);
@@ -31,6 +34,12 @@ class WguRepository {
     final r = rel.startsWith('/') ? rel : '/$rel';
     return '$base$r';
   }
+
+  Map<String, String> _passkeyHeaders(ServerSettings cfg) => {
+        'Content-Type': 'application/json',
+        if (cfg.passkeyOriginRequestHeaderValue != null)
+          _kWebAuthnPublicOriginHeader: cfg.passkeyOriginRequestHeaderValue!,
+      };
 
   /// GET `{origin}{path}/api/ui-nav-hints` must return 200 + JSON for the current session.
   /// Fails if the path does not hit the panel or returns HTML (404 login page, etc.).
@@ -313,7 +322,72 @@ class WguRepository {
             .map(PasskeyItemVm.fromJson)
             .toList()
         : <PasskeyItemVm>[];
-    return ProfilePasskeysSnapshot(username: un, passkeys: keys);
+    final pe = d['passkeys_enabled'];
+    final passkeysEnabled = pe is bool ? pe : true;
+    return ProfilePasskeysSnapshot(
+      username: un,
+      passkeys: keys,
+      passkeysEnabled: passkeysEnabled,
+    );
+  }
+
+  /// `POST /api/passkeys/register/:username/begin` — WebAuthn creation options (session cookie).
+  Future<Map<String, dynamic>> passkeyRegisterBegin({
+    required String username,
+    required ServerSettings cfg,
+  }) async {
+    final enc = Uri.encodeComponent(username);
+    final res = await _dio.post<dynamic>(
+      _u('/api/passkeys/register/$enc/begin'),
+      data: '{}',
+      options: Options(
+        headers: _passkeyHeaders(cfg),
+        followRedirects: false,
+        validateStatus: (c) => c != null && c < 600,
+        sendTimeout: const Duration(seconds: 25),
+        receiveTimeout: const Duration(seconds: 40),
+      ),
+    );
+    final code = res.statusCode ?? 0;
+    final raw = res.data;
+    if (code != 200 || raw is! Map) {
+      final msg =
+          raw is Map ? '${raw['message'] ?? 'HTTP $code'}' : 'HTTP $code';
+      throw StateError(msg);
+    }
+    return Map<String, dynamic>.from(raw);
+  }
+
+  /// `POST /api/passkeys/register/:username/finish` — attestation + optional `credential_name`.
+  Future<PasskeyMutationResult> passkeyRegisterFinish({
+    required String username,
+    required ServerSettings cfg,
+    required Map<String, dynamic> webauthnBody,
+  }) async {
+    final enc = Uri.encodeComponent(username);
+    final res = await _dio.post<Map<String, dynamic>>(
+      _u('/api/passkeys/register/$enc/finish'),
+      data: jsonEncode(webauthnBody),
+      options: Options(
+        headers: _passkeyHeaders(cfg),
+        followRedirects: false,
+        validateStatus: (c) => c != null && c < 600,
+        sendTimeout: const Duration(seconds: 25),
+        receiveTimeout: const Duration(seconds: 70),
+      ),
+    );
+    final code = res.statusCode ?? 0;
+    final d = res.data ?? {};
+    if (code != 200) {
+      return PasskeyMutationResult(
+        ok: false,
+        message: d['message']?.toString() ?? 'Error HTTP $code',
+      );
+    }
+    return PasskeyMutationResult(
+      ok: d['status'] == true,
+      message: d['message']?.toString(),
+    );
   }
 
   Future<UpdateUserResult> updateUser({
