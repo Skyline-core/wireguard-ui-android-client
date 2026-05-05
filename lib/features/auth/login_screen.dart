@@ -141,9 +141,10 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextStyle(color: context.palette.textPrimary),
               decoration: const InputDecoration(
                 labelText: 'URL del panel',
-                hintText: 'https://tu-dominio.com/wg',
+                hintText: 'https://dominio.net/wg o 192.168.1.5:51821/wg',
                 helperText:
-                    'Incluye el path aquí si el panel está bajo una subruta (p. ej. /wg)',
+                    'IPv4/host local sin scheme → http por defecto. Para HTTPS pon https:// '
+                    '(subruta, p. ej. /wg, en la misma URL).',
               ),
               keyboardType: TextInputType.url,
             ),

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permit cleartext HTTP so the app can reach WireGuard UI on LAN or by raw IP when
+  the panel is not behind TLS (common in lab / homelab setups). Prefer HTTPS for
+  production deployments; passwords and cookies then travel encrypted on the wire.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
