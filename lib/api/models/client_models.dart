@@ -141,7 +141,7 @@ class PeerTrafficRow {
     if (raw is Map) {
       raw.forEach((k, v) {
         if (v is Map) {
-          final m = Map<String, dynamic>.from(v as Map);
+          final m = Map<String, dynamic>.from(v);
           out['$k'] = PeerTrafficRow.fromJson(m);
         }
       });

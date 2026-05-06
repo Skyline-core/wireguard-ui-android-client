@@ -5,8 +5,9 @@ import 'package:encrypt/encrypt.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class CryptoStore {
+  /// Persists secrets via platform secure storage (Android defaults; avoid deprecated options).
   static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(),
   );
   static const _keyAlias = 'wgui_master_key';
 

@@ -90,6 +90,10 @@ Fix any **Android licenses** or missing SDK components before building (`flutter
 
 ---
 
+## Continuous integration
+
+GitHub Actions (**`.github/workflows/flutter_ci.yml`**) runs **`flutter pub get`**, **`flutter analyze --no-fatal-infos`**, and **`flutter test`** on pushes and pull requests to **`dev`**, **`main`**, and **`master`**.
+
 ## Initialize the project and fetch dependencies
 
 From the repository root (directory that contains `pubspec.yaml`):
