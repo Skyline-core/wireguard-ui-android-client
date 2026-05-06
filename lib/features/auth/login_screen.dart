@@ -8,6 +8,7 @@ import '../../background/server_health_scheduler.dart';
 import '../../core/config/server_settings.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -53,8 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
   ) async {
     if (_panelUrl.text.trim().isEmpty) {
       if (mounted) {
+        final loc = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Indica la URL del panel.')),
+          SnackBar(content: Text(loc.loginSnackUrlRequired)),
         );
       }
       return;
@@ -102,6 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final err = context.watch<AuthStore>().lastError;
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: context.palette.bg,
@@ -120,10 +123,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'WireGuard UI',
+            Text(
+              loc.loginAppTitle,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.8,
@@ -131,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Inicia sesión en tu panel',
+              loc.loginSubtitle,
               textAlign: TextAlign.center,
               style: TextStyle(color: context.palette.textSecondary),
             ),
@@ -139,12 +142,10 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _panelUrl,
               style: TextStyle(color: context.palette.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'URL del panel',
-                hintText: 'https://dominio.net/wg o 192.168.1.5:51821/wg',
-                helperText:
-                    'IPv4/host local sin scheme → http por defecto. Para HTTPS pon https:// '
-                    '(subruta, p. ej. /wg, en la misma URL).',
+              decoration: InputDecoration(
+                labelText: loc.loginPanelUrlLabel,
+                hintText: loc.loginPanelUrlHint,
+                helperText: loc.loginPanelUrlHelper,
               ),
               keyboardType: TextInputType.url,
             ),
@@ -165,11 +166,11 @@ class _LoginScreenState extends State<LoginScreen> {
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
               title: Text(
-                'Otro dominio HTTPS para passkeys',
+                loc.loginPasskeyHttpsCheckboxTitle,
                 style: TextStyle(fontSize: 14, color: context.palette.textSecondary),
               ),
               subtitle: Text(
-                'Si entras por IP/LAN pero la passkey está en otro hostname público.',
+                loc.loginPasskeyHttpsCheckboxSubtitle,
                 style: TextStyle(fontSize: 11, color: context.palette.textMuted),
               ),
             ),
@@ -180,11 +181,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: TextField(
                   controller: _passkeyOrigin,
                   style: TextStyle(color: context.palette.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Origen passkey (HTTPS)',
-                    hintText: 'https://vpn.ejemplo.net',
-                    helperText:
-                        'Misma URL base HTTPS donde registraste la passkey en el navegador.',
+                  decoration: InputDecoration(
+                    labelText: loc.loginPasskeyOriginLabel,
+                    hintText: loc.loginPasskeyOriginHint,
+                    helperText: loc.loginPasskeyOriginHelper,
                   ),
                   keyboardType: TextInputType.url,
                   autocorrect: false,
@@ -199,10 +199,9 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: _user,
               style: TextStyle(color: context.palette.textPrimary),
-              decoration: const InputDecoration(
-                labelText: 'Usuario',
-                helperText:
-                    'Opcional para passkey si usas llave descubrible (sin usuario)',
+              decoration: InputDecoration(
+                labelText: loc.loginUsernameLabel,
+                helperText: loc.loginUsernameHelper,
               ),
               textInputAction: TextInputAction.next,
               autocorrect: false,
@@ -212,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _pass,
               obscureText: true,
               style: TextStyle(color: context.palette.textPrimary),
-              decoration: const InputDecoration(labelText: 'Contraseña'),
+              decoration: InputDecoration(labelText: loc.loginPasswordLabel),
               onSubmitted: (_) => _submitPassword(),
             ),
             const SizedBox(height: 12),
@@ -220,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
               value: _remember,
               onChanged: (v) => setState(() => _remember = v),
               activeThumbColor: context.palette.accent,
-              title: const Text('Recordar sesión'),
+              title: Text(loc.loginRememberSession),
             ),
             if (err != null) ...[
               const SizedBox(height: 8),
@@ -235,13 +234,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Entrar'),
+                  : Text(loc.loginSubmit),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _busy ? null : () => _submitPasskey(),
               icon: Icon(Icons.key_outlined),
-              label: const Text('Entrar con passkey'),
+              label: Text(loc.loginSubmitPasskey),
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.palette.textPrimary,
                 side: BorderSide(

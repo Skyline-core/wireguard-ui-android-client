@@ -16,6 +16,7 @@ import '../../api/wgu_repository.dart';
 import '../auth/passkey_options.dart';
 import '../config/server_settings.dart';
 import '../offline/offline_snapshot_store.dart';
+import 'secure_cookie_storage.dart';
 import 'session_constants.dart';
 
 /// Same header as wireguard-ui [util.WebAuthnPublicOriginHeader].
@@ -43,7 +44,7 @@ class AuthStore extends ChangeNotifier {
   Future<CookieJar> _jar() async {
     if (_cookieJar != null) return _cookieJar!;
     _cookieJar = PersistCookieJar(
-      storage: FileStorage(
+      storage: SecureCookieStorage(
         '${(await getApplicationDocumentsDirectory()).path}/.wgui_cookies',
       ),
     );

@@ -11,6 +11,7 @@ import '../../core/config/server_settings.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/theme/app_theme.dart';
 import '../../notifications/wgu_notifications.dart';
+import '../../l10n/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -75,7 +76,7 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() {
           _loading = false;
           _loadErr =
-              'No se pudo obtener el usuario de la sesión. Vuelve a iniciar sesión.';
+              AppLocalizations.of(context)!.profileSessionLoadError;
         });
         return;
       }
@@ -109,18 +110,18 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  String _passwordStrengthHint() {
+  String _passwordStrengthHint(AppLocalizations loc) {
     final p = _password.text;
-    if (p.isEmpty) return 'Fortaleza: sin contraseña nueva';
-    if (p.length < 8) return 'Fortaleza: corta';
+    if (p.isEmpty) return loc.profilePasswordStrengthNone;
+    if (p.length < 8) return loc.profilePasswordStrengthShort;
     var score = 0;
     if (RegExp(r'[a-z]').hasMatch(p)) score++;
     if (RegExp(r'[A-Z]').hasMatch(p)) score++;
     if (RegExp(r'\d').hasMatch(p)) score++;
     if (RegExp(r'[^a-zA-Z\d]').hasMatch(p)) score++;
-    if (score >= 3 && p.length >= 12) return 'Fortaleza: buena';
-    if (score >= 2) return 'Fortaleza: media';
-    return 'Fortaleza: mejorable';
+    if (score >= 3 && p.length >= 12) return loc.profilePasswordStrengthGood;
+    if (score >= 2) return loc.profilePasswordStrengthMedium;
+    return loc.profilePasswordStrengthImprove;
   }
 
   Future<void> _saveProfile() async {
@@ -141,17 +142,19 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (!mounted) return;
       if (!res.ok) {
+        final loc = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res.message ?? 'No se pudo guardar')),
+          SnackBar(content: Text(res.message ?? loc.profileSaveFailed)),
         );
         setState(() => _saving = false);
         return;
       }
       if (res.reauthenticate) {
         _password.clear();
+        final loc = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(res.message ?? 'Vuelve a iniciar sesión.'),
+            content: Text(res.message ?? loc.profileRelogin),
           ),
         );
         await Future<void>.delayed(const Duration(milliseconds: 400));
@@ -167,8 +170,9 @@ class _ProfilePageState extends State<ProfilePage> {
         _password.clear();
         _saving = false;
       });
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cambios guardados.')),
+        SnackBar(content: Text(loc.profileSavedOk)),
       );
     } on DioException catch (e) {
       if (!mounted) return;
@@ -191,23 +195,23 @@ class _ProfilePageState extends State<ProfilePage> {
     final cfg = context.read<ServerSettings>();
     final un = auth.username;
     if (un == null) return;
+    final loc = AppLocalizations.of(context)!;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Quitar passkey'),
+        title: Text(loc.profileRemovePasskeyTitle),
         content: Text(
-          '¿Eliminar "${pk.name}"? '
-          'Las sesiones de esta cuenta se invalidan.',
+          loc.profileRemovePasskeyBody(pk.name),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(loc.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(backgroundColor: context.palette.red),
-            child: const Text('Eliminar'),
+            child: Text(loc.commonDelete),
           ),
         ],
       ),
@@ -221,14 +225,14 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) return;
     if (!res.ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res.message ?? 'Error')),
+        SnackBar(content: Text(res.message ?? loc.commonGenericError)),
       );
       return;
     }
     if (res.reauthenticate) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(res.message ?? 'Vuelve a iniciar sesión.'),
+          content: Text(res.message ?? loc.profileRelogin),
         ),
       );
       await Future<void>.delayed(const Duration(milliseconds: 400));
@@ -240,7 +244,7 @@ class _ProfilePageState extends State<ProfilePage> {
     await _load();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Passkey eliminada.')),
+      SnackBar(content: Text(loc.profilePasskeyRemoved)),
     );
   }
 
@@ -250,26 +254,27 @@ class _ProfilePageState extends State<ProfilePage> {
     final un = auth.username;
     if (un == null) return;
     final ctrl = TextEditingController(text: pk.name);
+    final loc = AppLocalizations.of(context)!;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Renombrar passkey'),
+        title: Text(loc.profileRenamePasskeyTitle),
         content: TextField(
           controller: ctrl,
-          decoration: const InputDecoration(
-            labelText: 'Nombre',
-            hintText: 'ej. iPhone, YubiKey',
+          decoration: InputDecoration(
+            labelText: loc.profileRenamePasskeyFieldLabel,
+            hintText: loc.profileRenamePasskeyFieldHint,
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar'),
+            child: Text(loc.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Guardar'),
+            child: Text(loc.commonSave),
           ),
         ],
       ),
@@ -287,23 +292,24 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) return;
     if (!res.ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(res.message ?? 'Error')),
+        SnackBar(content: Text(res.message ?? loc.commonGenericError)),
       );
       return;
     }
     await _load();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nombre actualizado.')),
+      SnackBar(content: Text(loc.profileNameUpdated)),
     );
   }
 
   Future<void> _addPasskeyNative() async {
     if (!_passkeysEnabled || _registeringPasskey) return;
+    final loc = AppLocalizations.of(context)!;
     final name = _addPasskeyName.text.trim();
     if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Escribe un nombre para esta passkey.')),
+        SnackBar(content: Text(loc.profileEnterPasskeyName)),
       );
       return;
     }
@@ -328,7 +334,8 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       if (!res.ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(res.message ?? 'No se pudo registrar la passkey')),
+          SnackBar(
+              content: Text(res.message ?? loc.profilePasskeyRegisterFailed)),
         );
         return;
       }
@@ -336,7 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
       await _load();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passkey registrada en este dispositivo.')),
+        SnackBar(content: Text(loc.profilePasskeyRegisteredOk)),
       );
     } on StateError catch (e) {
       if (!mounted) return;
@@ -348,24 +355,27 @@ class _ProfilePageState extends State<ProfilePage> {
     } on pkex.ExcludeCredentialsCanNotBeRegisteredException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Esta llave ya está registrada para tu cuenta.'),
+        SnackBar(
+          content:
+              Text(AppLocalizations.of(context)!.profilePasskeyDuplicate),
         ),
       );
     } on pkex.DomainNotAssociatedException catch (e) {
       if (!mounted) return;
+      final hintLoc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo validar el dominio para passkeys (${e.message ?? ''}). '
-            'Revisa «Origen passkey» en Ajustes si entras por IP o otro host.',
+            hintLoc.profilePasskeyDomainHint(e.message ?? ''),
           ),
         ),
       );
     } on pkex.DeviceNotSupportedException {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Este dispositivo no permite crear passkeys.')),
+        SnackBar(
+            content: Text(
+                AppLocalizations.of(context)!.profilePasskeyDeviceUnsupported)),
       );
     } on pkex.AuthenticatorException catch (e) {
       if (!mounted) return;
@@ -444,11 +454,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final offline = context.watch<AuthStore>().offlineMode;
     return Scaffold(
       backgroundColor: context.palette.bg,
       appBar: AppBar(
-        title: const Text('Mi cuenta'),
+        title: Text(loc.profileTitle),
       ),
       body: SafeArea(
         child: AbsorbPointer(
@@ -470,7 +481,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           const SizedBox(height: 16),
                           FilledButton(
                             onPressed: _load,
-                            child: const Text('Reintentar'),
+                            child: Text(loc.commonRetry),
                           ),
                         ],
                       ),
@@ -479,14 +490,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(0, 8, 0, 32),
                     children: [
-                      _sectionTitle('Datos de tu cuenta'),
+                      _sectionTitle(loc.profileSectionAccount),
                       _card(
                         children: [
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                             child: Text(
-                              'Solo modifica tu propio usuario. Si cambias contraseña, '
-                              'se cerrará la sesión.',
+                              loc.profileAccountHint,
                               style: TextStyle(
                                 fontSize: 12.5,
                                 height: 1.35,
@@ -500,7 +510,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: TextField(
                               controller: _displayName,
                               textCapitalization: TextCapitalization.words,
-                              decoration: _field('NOMBRE PARA MOSTRAR'),
+                              decoration: _field(loc.profileFieldDisplayName),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -508,7 +518,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: TextField(
                               controller: _username,
-                              decoration: _field('NOMBRE DE USUARIO'),
+                              decoration: _field(loc.profileFieldUsername),
                               autocorrect: false,
                             ),
                           ),
@@ -518,7 +528,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: TextField(
                               controller: _email,
                               keyboardType: TextInputType.emailAddress,
-                              decoration: _field('CORREO ELECTRÓNICO'),
+                              decoration: _field(loc.profileFieldEmail),
                               autocorrect: false,
                             ),
                           ),
@@ -529,15 +539,17 @@ class _ProfilePageState extends State<ProfilePage> {
                               controller: _password,
                               obscureText: _obscurePassword,
                               decoration: _field(
-                                'NUEVA CONTRASEÑA',
-                                hint: 'Vacío para mantener la actual',
+                                loc.profileFieldNewPassword,
+                                hint: loc.profileNewPasswordHint,
                               ).copyWith(
                                 suffixIcon: TextButton(
                                   onPressed: () => setState(
                                     () => _obscurePassword = !_obscurePassword,
                                   ),
                                   child: Text(
-                                    _obscurePassword ? 'Mostrar' : 'Ocultar',
+                                    _obscurePassword
+                                        ? loc.profilePasswordShow
+                                        : loc.profilePasswordHide,
                                     style: TextStyle(fontSize: 13),
                                   ),
                                 ),
@@ -550,7 +562,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             child: Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                _passwordStrengthHint(),
+                                _passwordStrengthHint(loc),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: context.palette.textMuted,
@@ -573,22 +585,21 @@ class _ProfilePageState extends State<ProfilePage> {
                                           color: Colors.black,
                                         ),
                                       )
-                                    : const Text('Guardar cambios'),
+                                    : Text(loc.profileSaveChanges),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      _sectionTitle('Passkeys'),
+                      _sectionTitle(loc.profileSectionPasskeys),
                       _card(
                         children: [
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                             child: Text(
                               _passkeysEnabled
-                                  ? 'Registra passkeys en este dispositivo o renombra / quita las ya guardadas.'
-                                  : 'Las passkeys están desactivadas en la configuración del servidor. '
-                                      'Actívalas en el panel web (ajustes globales) para poder registrar llaves.',
+                                  ? loc.profilePasskeysHintOn
+                                  : loc.profilePasskeysHintOff,
                               style: TextStyle(
                                 fontSize: 12.5,
                                 height: 1.35,
@@ -601,7 +612,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                               child: Text(
-                                'No hay passkeys en esta cuenta.',
+                                loc.profileNoPasskeys,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: context.palette.textMuted,
@@ -627,7 +638,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       onPressed: _passkeysEnabled
                                           ? () => _renamePasskey(pk)
                                           : null,
-                                      tooltip: 'Renombrar',
+                                      tooltip: loc.profilePasskeyRenameTooltip,
                                     ),
                                     IconButton(
                                       icon: Icon(
@@ -638,7 +649,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                       onPressed: _passkeysEnabled
                                           ? () => _removePasskey(pk)
                                           : null,
-                                      tooltip: 'Eliminar',
+                                      tooltip: loc.profilePasskeyDeleteTooltip,
                                     ),
                                   ],
                                 ),
@@ -649,10 +660,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               controller: _addPasskeyName,
                               enabled: _passkeysEnabled && !_registeringPasskey,
                               decoration: _field(
-                                'NOMBRE (EJ: IPHONE, YUBIKEY)',
+                                loc.profileAddPasskeyNameLabel,
                               ).copyWith(
-                                hintText:
-                                    'Nombre (ej: iPhone, MacBook, YubiKey)',
+                                hintText: loc.profileAddPasskeyNameHint,
                               ),
                             ),
                           ),
@@ -674,7 +684,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                           color: Colors.black,
                                         ),
                                       )
-                                    : const Text('Agregar passkey'),
+                                    : Text(loc.profileAddPasskey),
                               ),
                             ),
                           ),

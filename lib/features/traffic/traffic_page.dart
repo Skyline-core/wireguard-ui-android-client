@@ -13,6 +13,7 @@ import '../../core/format/formatters.dart';
 import '../../core/offline/offline_snapshot_store.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 class TrafficPage extends StatefulWidget {
   const TrafficPage({super.key});
@@ -37,6 +38,7 @@ class TrafficPageState extends State<TrafficPage> {
   Future<void> _load({bool silent = false}) async {
     final auth = context.read<AuthStore>();
     if (auth.offlineMode) {
+      final loc = AppLocalizations.of(context)!;
       if (!silent) {
         setState(() {
           loading = true;
@@ -50,7 +52,7 @@ class TrafficPageState extends State<TrafficPage> {
       setState(() {
         loading = false;
         if (snap == null) {
-          err = 'Sin datos en caché.';
+          err = loc.peersOfflineNoCache;
         } else {
           err = null;
           vm = snap.traffic24h;
@@ -132,13 +134,14 @@ class TrafficPageState extends State<TrafficPage> {
   }
 
   String _rangeSubtitle() {
+    final loc = AppLocalizations.of(context)!;
     switch (range) {
       case '7d':
-        return 'últimos 7 días (estimado en vivo)';
+        return loc.trafficRangeSubtitle7d;
       case '30d':
-        return 'últimos 30 días (estimado en vivo)';
+        return loc.trafficRangeSubtitle30d;
       default:
-        return 'últimas 24h (estimado en vivo)';
+        return loc.trafficRangeSubtitle24h;
     }
   }
 
@@ -196,13 +199,14 @@ class TrafficPageState extends State<TrafficPage> {
   }
 
   Widget _header(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tráfico',
+            loc.trafficTitle,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 22,
@@ -210,7 +214,7 @@ class TrafficPageState extends State<TrafficPage> {
             ),
           ),
           Text(
-            vm == null ? '…' : 'Actualizado · age ${vm!.updatedAgeSecs}s',
+            vm == null ? '…' : loc.trafficUpdatedAge(vm!.updatedAgeSecs),
             style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
           ),
         ],
@@ -219,6 +223,7 @@ class TrafficPageState extends State<TrafficPage> {
   }
 
   Widget _liveCard(TrafficSeriesResponseVm v) {
+    final loc = AppLocalizations.of(context)!;
     final download = formatBitrateBitsPerSecFromBytesPerSec(
         v.webTrafficKpiPeerDownloadBytesPerSec);
     final upload = formatBitrateBitsPerSecFromBytesPerSec(
@@ -237,7 +242,7 @@ class TrafficPageState extends State<TrafficPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'VELOCIDAD EN TIEMPO REAL',
+              loc.trafficRealtimeHeader,
               style: TextStyle(
                 letterSpacing: 0.8,
                 fontSize: 11,
@@ -262,7 +267,7 @@ class TrafficPageState extends State<TrafficPage> {
                         ),
                       ),
                       Text(
-                        'descarga',
+                        loc.trafficDlShort,
                         style:
                             TextStyle(fontSize: 11, color: context.palette.textMuted),
                       ),
@@ -283,7 +288,7 @@ class TrafficPageState extends State<TrafficPage> {
                         ),
                       ),
                       Text(
-                        'subida',
+                        loc.trafficUlShort,
                         style:
                             TextStyle(fontSize: 11, color: context.palette.textMuted),
                       ),
@@ -299,15 +304,16 @@ class TrafficPageState extends State<TrafficPage> {
   }
 
   Widget _rangeTabs(bool offline) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(
         children: [
-          _rng('24h', '24h', offline),
+          _rng(loc.trafficTab24h, '24h', offline),
           const SizedBox(width: 8),
-          _rng('7 días', '7d', offline),
+          _rng(loc.trafficTab7d, '7d', offline),
           const SizedBox(width: 8),
-          _rng('30 días', '30d', offline),
+          _rng(loc.trafficTab30d, '30d', offline),
         ],
       ),
     );
@@ -345,6 +351,7 @@ class TrafficPageState extends State<TrafficPage> {
 
   /// Same idea as web aggregate chart: one bar per time bucket, height ∝ RXavg + TXavg (bytes/s).
   Widget _barsAggregate(TrafficSeriesResponseVm v) {
+    final loc = AppLocalizations.of(context)!;
     final buckets = v.buckets;
     if (buckets.isEmpty) return const SizedBox.shrink();
 
@@ -367,7 +374,7 @@ class TrafficPageState extends State<TrafficPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Ancho de banda · agregado',
+              loc.trafficBandwidthAggregate,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
@@ -415,9 +422,9 @@ class TrafficPageState extends State<TrafficPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('inicio',
+                Text(loc.trafficAxisStart,
                     style: TextStyle(fontSize: 9, color: context.palette.textMuted)),
-                Text('ahora',
+                Text(loc.trafficAxisNow,
                     style: TextStyle(fontSize: 9, color: context.palette.textMuted)),
               ],
             ),
@@ -429,6 +436,7 @@ class TrafficPageState extends State<TrafficPage> {
 
   /// Matches web `traffic.html` `renderBandwidthChart`: one stacked column per peer (download↑ red, upload↓ yellow).
   Widget _barsPerPeer(TrafficSeriesResponseVm v) {
+    final loc = AppLocalizations.of(context)!;
     final list =
         v.peerTotals.isNotEmpty ? v.peerTotals : v.peerCurrentTotals;
     if (list.isEmpty) {
@@ -442,7 +450,7 @@ class TrafficPageState extends State<TrafficPage> {
             border: Border.all(color: context.palette.borderSubtle),
           ),
           child: Text(
-            'Sin datos por peer para este rango.',
+            loc.trafficEmptyPeerBars,
             style: TextStyle(color: context.palette.textMuted, fontSize: 13),
           ),
         ),
@@ -473,7 +481,7 @@ class TrafficPageState extends State<TrafficPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Ancho de banda',
+              loc.trafficBandwidthPeers,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 13,
@@ -570,7 +578,7 @@ class TrafficPageState extends State<TrafficPage> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Descarga (arriba)',
+                  loc.trafficLegendDownloadTop,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -588,7 +596,7 @@ class TrafficPageState extends State<TrafficPage> {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Subida (abajo)',
+                  loc.trafficLegendUploadBottom,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -599,7 +607,7 @@ class TrafficPageState extends State<TrafficPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Perspectiva peer: descarga = TX del servidor, subida = RX del servidor.',
+              loc.trafficPeerPerspectiveNote,
               style: TextStyle(
                 fontSize: 9,
                 fontStyle: FontStyle.italic,
@@ -614,6 +622,7 @@ class TrafficPageState extends State<TrafficPage> {
   }
 
   Widget _metrics(TrafficSeriesResponseVm v) {
+    final loc = AppLocalizations.of(context)!;
     final dl = v.resolvedDownloadKpi(dash);
     final ul = v.resolvedUploadKpi(dash);
     final peerCount =
@@ -625,10 +634,11 @@ class TrafficPageState extends State<TrafficPage> {
         child: ListView(
           scrollDirection: Axis.horizontal,
           children: [
-            _metricChip('Descarga', formatBytes(dl)),
-            _metricChip('Subida', formatBytes(ul)),
-            _metricChip('Pico', '${v.peakPeerDownloadMbps.toStringAsFixed(1)} Mb/s'),
-            _metricChip('Peers', '$peerCount'),
+            _metricChip(loc.trafficMetricDownload, formatBytes(dl)),
+            _metricChip(loc.trafficMetricUpload, formatBytes(ul)),
+            _metricChip(loc.trafficMetricPeak,
+                '${v.peakPeerDownloadMbps.toStringAsFixed(1)} Mb/s'),
+            _metricChip(loc.trafficMetricPeers, '$peerCount'),
           ],
         ),
       ),
@@ -667,6 +677,7 @@ class TrafficPageState extends State<TrafficPage> {
   }
 
   Widget _peerRanking(TrafficSeriesResponseVm v) {
+    final loc = AppLocalizations.of(context)!;
     final source =
         v.peerTotals.isNotEmpty ? v.peerTotals : v.peerCurrentTotals;
     final list = [...source]
@@ -683,7 +694,9 @@ class TrafficPageState extends State<TrafficPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 10),
           child: Text(
-            v.peerTotals.isNotEmpty ? 'POR PEER (ventana)' : 'POR PEER (kernel)',
+            v.peerTotals.isNotEmpty
+                ? loc.trafficRankingWindow
+                : loc.trafficRankingKernel,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,

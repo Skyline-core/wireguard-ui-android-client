@@ -45,7 +45,8 @@ Android **Flutter** client for **[WireGuard UI](https://github.com/Skyline-core/
 
 ### Settings and profile
 
-- **Appearance (theme)** in **Settings → Apariencia**: choose **Light**, **Dark**, or **Automatic**. Automatic follows the device **system** light/dark setting (same as many Android apps). The choice is stored on the device and applies across the whole app after login.
+- **Appearance (theme)** in **Settings** (labeled per current locale): choose **Light**, **Dark**, or **Automatic**. Automatic follows the device **system** light/dark setting. The choice is stored on the device and applies across the whole app after login.
+- **Language** in **Settings → Application**: **System default**, **English**, or **Spanish** (Flutter **`gen-l10n`**; see **Localization (`gen-l10n`)** below).
 - **Server / tunnel readouts** and links to **Profile** (display name, email, password, Passkeys management) and **Logs** when available.
 - **Push notifications** toggle: registers or unregisters the device FCM token with the server (`/api/push/register` / `/api/push/unregister`) when Firebase is configured on both sides.
 - **Realtime monitoring** toggle for admins (maps to server **realtime stats** / logs nav hints).
@@ -182,6 +183,30 @@ Release signing uses `**android/key.properties**` and a keystore file when prese
 - **Cookie-based session** (Dio + persistent `cookie_jar`).
 - `**WguRepository`** and Dart models aligned with WireGuard UI JSON.
 - **Firebase Cloud Messaging** optional: register at `**/api/push/register`** from **Settings** when alerts are enabled. Requires `**google-services.json`** in `**android/app/`** and FCM configured on the **WireGuard UI** server (service account JSON — not the same file as the client).
+
+### Localization (`gen-l10n`)
+
+The app ships **English** (`en`) and **Spanish** (`es`) UI strings via Flutter’s **`flutter_gen`** pipeline.
+
+| Item | Location |
+| ---- | -------- |
+| Config | `**l10n.yaml**` — `arb-dir`, `template-arb-file`, `output-localization-file`, `output-dir` (generated Dart under `**lib/l10n/**`). |
+| Source strings | `**lib/l10n/app_es.arb**` (template locale) and `**lib/l10n/app_en.arb**`. Prefer keeping keys and placeholders in sync in both files. |
+| Generated API | `**lib/l10n/app_localizations.dart**` (+ `*_en.dart`, `*_es.dart`). Do not hand-edit the generated subclasses; rerun codegen after ARB edits. |
+
+**Runtime wiring:** `**lib/app.dart**` registers `AppLocalizations.delegate`, `supportedLocales`, and sets `MaterialApp.locale` from `ServerSettings.localePreference`: **system** follows the OS, or a fixed **`en`** / **`es`**. Users change this under **Settings → Application → Language**.
+
+**Workflow when adding or changing copy**
+
+1. Add or edit the message key in **`app_es.arb`** and **`app_en.arb`** (use ICU placeholders and `@key` metadata for parameters, as in existing entries).
+2. Regenerate Dart: `**flutter gen-l10n**` from the repo root (or rely on tooling that runs codegen after `flutter pub get` when **`flutter: generate: true`** is set in **`pubspec.yaml`**).
+3. In widgets, resolve strings with **`AppLocalizations.of(context)!`** (never hard-code user-facing text in Dart for flows that already use l10n).
+
+**Scopes covered:** login, shell (offline / apply banners, tab labels), home, peers, peer detail / new peer, traffic, logs, profile, settings (including dialogs, snackbars, and biometric app-lock strings where applicable).
+
+### Biometric app lock (optional UX)
+
+Users can enable a **biometric app lock** in Settings so reopening the app may require fingerprint, device PIN/pattern, or Face ID (`**lib/core/auth/app_lock_wrapper.dart**`, **`local_auth`**). This gates the Flutter shell only and does not replace server authentication.
 
 ---
 

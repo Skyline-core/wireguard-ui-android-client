@@ -14,6 +14,7 @@ import '../../features/peers/peers_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/traffic/traffic_page.dart';
 import '../../notifications/wgu_notifications.dart';
+import '../../l10n/app_localizations.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -154,10 +155,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  static const _titles = ['Inicio', 'Peers', 'Tráfico', 'Ajustes'];
-
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final titles = [loc.tabHome, loc.tabPeers, loc.tabTraffic, loc.tabSettings];
+
     final pages = [
       HomePage(key: _homeKey, onOpenPeers: () => _setTab(1)),
       PeersPage(key: _peersKey),
@@ -200,8 +202,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Sin conexión con el servidor. Datos en caché; solo «Cerrar sesión» disponible. '
-                            'Caduca la sesión tras ${SessionConstants.idleLogoutDays} días sin actividad.',
+                            loc.shellOfflineWarning(SessionConstants.idleLogoutDays),
                             style: TextStyle(
                               fontSize: 11.5,
                               height: 1.35,
@@ -236,7 +237,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Hay cambios sin aplicar al túnel (como en la web). Pulsa Aplicar para actualizar wg.conf en el servidor.',
+                            loc.shellUnappliedChanges,
                             style: TextStyle(
                               fontSize: 11.5,
                               height: 1.25,
@@ -260,17 +261,15 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                                   if (ok) {
                                     ScaffoldMessenger.of(context)
                                         .showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Configuración aplicada en el servidor.',
-                                        ),
+                                      SnackBar(
+                                        content: Text(loc.shellApplySuccess),
                                       ),
                                     );
                                   } else {
                                     final msg = context
                                             .read<WgApplyController>()
                                             .lastError ??
-                                        'No se pudo aplicar la configuración.';
+                                        loc.shellApplyFallbackError;
                                     ScaffoldMessenger.of(context)
                                         .showSnackBar(
                                       SnackBar(content: Text(msg)),
@@ -293,7 +292,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                                     color: context.palette.accent,
                                   ),
                                 )
-                              : const Text('Aplicar'),
+                              : Text(loc.shellApplyBtn),
                         ),
                       ],
                     ),
@@ -312,22 +311,22 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               NavigationDestination(
                 icon: Icon(Icons.grid_view_rounded,
                     color: _index == 0 ? context.palette.accent : context.palette.textMuted),
-                label: _titles[0],
+                label: titles[0],
               ),
               NavigationDestination(
                 icon: Icon(Icons.people_outline,
                     color: _index == 1 ? context.palette.accent : context.palette.textMuted),
-                label: _titles[1],
+                label: titles[1],
               ),
               NavigationDestination(
                 icon: Icon(Icons.show_chart_rounded,
                     color: _index == 2 ? context.palette.accent : context.palette.textMuted),
-                label: _titles[2],
+                label: titles[2],
               ),
               NavigationDestination(
                 icon: Icon(Icons.settings_input_antenna,
                     color: _index == 3 ? context.palette.accent : context.palette.textMuted),
-                label: _titles[3],
+                label: titles[3],
               ),
             ],
           ),

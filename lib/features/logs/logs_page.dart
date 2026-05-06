@@ -6,6 +6,7 @@ import '../../api/wgu_repository.dart';
 import '../../core/config/server_settings.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Rough syslog-ish level for tint + chips (aligned with web `detectLevel`, sin falsos
 /// positivos tipo **STDERR** → substring `ERR`).
@@ -90,8 +91,7 @@ class _LogsPageState extends State<LogsPage> {
       if (logs == null) {
         setState(() {
           snap = null;
-          err =
-              'No se pudieron cargar los logs (403 o sesión). Activa el monitoreo en Ajustes o revisa permisos.';
+          err = AppLocalizations.of(context)!.logsLoadFailed;
           loading = false;
         });
         return;
@@ -130,6 +130,7 @@ class _LogsPageState extends State<LogsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final lines = snap?.displayLines ?? <String>[];
 
     Iterable<String> visible = lines;
@@ -146,7 +147,7 @@ class _LogsPageState extends State<LogsPage> {
 
     return Scaffold(
       backgroundColor: context.palette.bg,
-      appBar: AppBar(title: const Text('Logs')),
+      appBar: AppBar(title: Text(loc.logsTitle)),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -163,8 +164,7 @@ class _LogsPageState extends State<LogsPage> {
                   ),
                 ),
                 child: Text(
-                  'El monitoreo en vivo está desactivado en el servidor (igual que en la web). '
-                  'Actívalo en Ajustes → «Monitoreo en vivo (logs y estadísticas)».',
+                  loc.logsMonitoringDisabled,
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.35,
@@ -179,7 +179,7 @@ class _LogsPageState extends State<LogsPage> {
               controller: _filter,
               enabled: !monitoringDisabled || snap != null,
               decoration: InputDecoration(
-                hintText: 'Buscar en logs…',
+                hintText: loc.logsSearchHint,
                 prefixIcon: Icon(Icons.search),
                 filled: true,
                 fillColor: context.palette.surface2,
@@ -201,7 +201,7 @@ class _LogsPageState extends State<LogsPage> {
                 final sel = lvl == k;
                 return ChoiceChip(
                   selected: sel,
-                  label: Text(k == 'all' ? 'Todos' : k),
+                  label: Text(k == 'all' ? loc.logsFilterAll : k),
                   selectedColor: context.palette.accent.withValues(alpha: 0.15),
                   onSelected: (_) => setState(() => lvl = k),
                 );
@@ -227,7 +227,7 @@ class _LogsPageState extends State<LogsPage> {
                             const SizedBox(height: 48),
                             Center(
                               child: Text(
-                                'No hay líneas que mostrar con los filtros actuales.',
+                                loc.logsEmptyWithFilters,
                                 style: TextStyle(color: context.palette.textMuted),
                                 textAlign: TextAlign.center,
                               ),

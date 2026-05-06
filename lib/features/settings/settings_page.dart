@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:local_auth/local_auth.dart';
+import '../../l10n/app_localizations.dart';
 
 import '../../background/server_health_scheduler.dart';
 import '../../core/config/server_settings.dart';
@@ -79,22 +81,23 @@ class SettingsPageState extends State<SettingsPage> {
     final ok = await r.setRealtimeStatsEnabled(enabled);
     if (!mounted) return;
     setState(() => savingRealtime = false);
+    final loc = AppLocalizations.of(context)!;
     if (ok) {
       setState(() => realtimeLogsEnabled = enabled);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             enabled
-                ? 'Monitoreo en vivo activado.'
-                : 'Monitoreo en vivo desactivado.',
+                ? loc.settingsLiveMonitoringActivated
+                : loc.settingsLiveMonitoringDeactivated,
           ),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'No se pudo guardar (¿usuario administrador?). Revisa la sesión.',
+            loc.settingsLiveMonitoringSaveFailed,
           ),
         ),
       );
@@ -108,7 +111,8 @@ class SettingsPageState extends State<SettingsPage> {
     final cfg = context.watch<ServerSettings>();
     final alerts = context.watch<WguNotificationController>();
     final auth = context.watch<AuthStore>();
-    final user = auth.username ?? 'Sesión';
+    final loc = AppLocalizations.of(context)!;
+    final user = auth.username ?? loc.settingsSessionFallback;
     final offline = auth.offlineMode;
 
     return Scaffold(
@@ -141,7 +145,7 @@ class SettingsPageState extends State<SettingsPage> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                             child: Text(
-                              'Ajustes',
+                              loc.settingsTitle,
                               style: TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 22,
@@ -150,7 +154,7 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                           ),
                           _hero(context, user, cfg.originNormalized),
-                          _sectionTitle('Apariencia'),
+                          _sectionTitle(loc.settingsSectionAppearance),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Material(
@@ -162,7 +166,7 @@ class SettingsPageState extends State<SettingsPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Tema',
+                                      loc.settingsTheme,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 15,
@@ -171,7 +175,7 @@ class SettingsPageState extends State<SettingsPage> {
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      'Automático sigue el modo claro u oscuro del teléfono.',
+                                      loc.settingsThemeDesc,
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: context.palette.textMuted,
@@ -185,14 +189,14 @@ class SettingsPageState extends State<SettingsPage> {
                                           icon: Icon(Icons.light_mode_outlined,
                                               size: 18,
                                               color: context.palette.textSecondary),
-                                          label: const Text('Claro'),
+                                          label: Text(loc.settingsThemeLight),
                                         ),
                                         ButtonSegment(
                                           value: AppThemePreference.dark,
                                           icon: Icon(Icons.dark_mode_outlined,
                                               size: 18,
                                               color: context.palette.textSecondary),
-                                          label: const Text('Oscuro'),
+                                          label: Text(loc.settingsThemeDark),
                                         ),
                                         ButtonSegment(
                                           value: AppThemePreference.system,
@@ -200,7 +204,7 @@ class SettingsPageState extends State<SettingsPage> {
                                               Icons.brightness_auto_outlined,
                                               size: 18,
                                               color: context.palette.textSecondary),
-                                          label: const Text('Automático'),
+                                          label: Text(loc.settingsThemeAuto),
                                         ),
                                       ],
                                       selected: {cfg.themePreference},
@@ -209,30 +213,61 @@ class SettingsPageState extends State<SettingsPage> {
                                         cfg.setThemePreference(s.first);
                                       },
                                     ),
+                                    const SizedBox(height: 24),
+                                    Text(
+                                      loc.settingsLanguageTitle,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                        color: context.palette.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SegmentedButton<AppLocalePreference>(
+                                      segments: [
+                                        ButtonSegment(
+                                          value: AppLocalePreference.system,
+                                          label: Text(loc.settingsLanguageSystem),
+                                        ),
+                                        ButtonSegment(
+                                          value: AppLocalePreference.en,
+                                          label: Text(loc.settingsLanguageEn),
+                                        ),
+                                        ButtonSegment(
+                                          value: AppLocalePreference.es,
+                                          label: Text(loc.settingsLanguageEs),
+                                        ),
+                                      ],
+                                      selected: {cfg.localePreference},
+                                      onSelectionChanged: (s) {
+                                        if (s.isEmpty) return;
+                                        cfg.setLocalePreference(s.first);
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
                           ),
-                          _sectionTitle('Servidor'),
+                          _sectionTitle(loc.settingsSectionServer),
                           _card(context, children: [
-                            _tile(Icons.dns, 'Interfaz WireGuard',
-                                tunnel?['iface_name']?.toString() ?? '—'),
+                            _tile(Icons.dns, loc.settingsWgInterface,
+                                tunnel?['iface_name']?.toString() ??
+                                    loc.commonDash),
                             _tile(
                                 Icons.shield_outlined,
-                                'Estado del túnel',
+                                loc.settingsTunnelState,
                                 tunnel?['tunnel_running'] == true
-                                    ? 'Activo'
-                                    : 'Inactivo'),
+                                    ? loc.settingsStateActive
+                                    : loc.settingsStateInactive),
                             SwitchListTile(
                               secondary: Icon(
                                 Icons.podcasts_outlined,
                                 color: context.palette.accent.withValues(alpha: 0.9),
                               ),
-                              title: const Text(
-                                  'Monitoreo en vivo (logs y estadísticas)'),
-                              subtitle: const Text(
-                                'Misma opción que en la web: habilita /api/system-logs, actualización de tráfico en vivo y la entrada Logs en el panel.',
+                              title: Text(loc.settingsLiveMonitoring),
+                              subtitle: Text(
+                                loc.settingsLiveMonitoringDesc,
                                 style: TextStyle(fontSize: 11),
                               ),
                               value: realtimeLogsEnabled ?? false,
@@ -252,7 +287,7 @@ class SettingsPageState extends State<SettingsPage> {
                               leading: Icon(Icons.terminal,
                                   color:
                                       context.palette.accent.withValues(alpha: 0.9)),
-                              title: const Text('Logs del sistema'),
+                              title: Text(loc.settingsSystemLogs),
                               subtitle: const Text('/api/system-logs'),
                               trailing: Icon(Icons.chevron_right),
                               onTap: () => Navigator.of(context).push(
@@ -261,12 +296,12 @@ class SettingsPageState extends State<SettingsPage> {
                               ),
                             ),
                           ]),
-                          _sectionTitle('Cliente API'),
+                          _sectionTitle(loc.settingsSectionApiClient),
                           _card(context, children: [
                             ListTile(
                               leading: Icon(Icons.link,
                                   color: context.palette.accent),
-                              title: const Text('Origen del servidor'),
+                              title: Text(loc.settingsServerOrigin),
                               subtitle: Text(
                                 cfg.originNormalized,
                                 style: TextStyle(
@@ -279,7 +314,7 @@ class SettingsPageState extends State<SettingsPage> {
                             ListTile(
                               leading: Icon(Icons.http,
                                   color: context.palette.accent),
-                              title: const Text('API (origen + base path)'),
+                              title: Text(loc.settingsApiPrefix),
                               subtitle: Text(
                                 cfg.apiPrefix,
                                 style: TextStyle(
@@ -289,10 +324,10 @@ class SettingsPageState extends State<SettingsPage> {
                             ListTile(
                               leading: Icon(Icons.key_outlined,
                                   color: context.palette.accent.withValues(alpha: 0.85)),
-                              title: const Text('Origen passkey (opcional)'),
+                              title: Text(loc.settingsPasskeyOrigin),
                               subtitle: Text(
                                 cfg.passkeyPublicOrigin.trim().isEmpty
-                                    ? 'No definido'
+                                    ? loc.settingsNotDefined
                                     : cfg.passkeyPublicOrigin,
                                 style: TextStyle(
                                     fontFamily: 'monospace',
@@ -303,24 +338,66 @@ class SettingsPageState extends State<SettingsPage> {
                             ),
                             ListTile(
                               leading: Icon(Icons.edit_outlined),
-                              title: const Text('Cambiar base path'),
-                              subtitle: const Text(
-                                'El dominio o IP no se edita aquí; solo la ruta del panel.',
+                              title: Text(loc.settingsChangeBasePath),
+                              subtitle: Text(
+                                loc.settingsChangeBasePathDesc,
                                 style: TextStyle(fontSize: 11),
                               ),
                               onTap: () => _editBasePathDialog(context),
                             ),
                           ]),
-                          _sectionTitle('Aplicación'),
+                          _sectionTitle(loc.settingsSectionApp),
                           _card(context, children: [
+                            SwitchListTile(
+                              value: cfg.appLockEnabled,
+                              onChanged: (v) async {
+                                if (v) {
+                                  final auth = LocalAuthentication();
+                                  final canCheck = await auth.canCheckBiometrics || await auth.isDeviceSupported();
+                                  if (!canCheck) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content:
+                                              Text(loc.settingsAppLockNotSupported)),
+                                    );
+                                    return;
+                                  }
+                                  try {
+                                    final didAuth = await auth.authenticate(
+                                      localizedReason: loc.settingsAppLockAuthReason,
+                                    );
+                                    if (didAuth) {
+                                      await cfg.setAppLockEnabled(true);
+                                    }
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              loc.settingsAppLockError('$e'))),
+                                    );
+                                  }
+                                } else {
+                                  await cfg.setAppLockEnabled(false);
+                                }
+                              },
+                              activeThumbColor: context.palette.accent,
+                              secondary: Icon(Icons.fingerprint, color: context.palette.accent.withValues(alpha: 0.9)),
+                              title: Text(loc.settingsAppLockTitle),
+                              subtitle: Text(
+                                loc.settingsAppLockSubtitle,
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                            ),
                             SwitchListTile(
                               value: cfg.trafficChartPerPeer,
                               onChanged: (v) => cfg.setTrafficChartPerPeer(v),
                               activeThumbColor: context.palette.accent,
-                              title: const Text('Mostrar gráfica por peer'),
-                              subtitle: const Text(
-                                'En Tráfico, barras apiladas por cliente (como el panel web). Desactivado: gráfica agregada por tiempo.',
-                                style: TextStyle(fontSize: 11),
+                              title: Text(loc.settingsChartPerPeerTitle),
+                              subtitle: Text(
+                                loc.settingsChartPerPeerSubtitle,
+                                style: const TextStyle(fontSize: 11),
                               ),
                             ),
                             SwitchListTile(
@@ -336,9 +413,9 @@ class SettingsPageState extends State<SettingsPage> {
                               secondary: Icon(Icons.notifications_active_outlined,
                                   color:
                                       context.palette.yellow.withValues(alpha: 0.9)),
-                              title: const Text('Notificaciones push'),
-                              subtitle: const Text(
-                                'Peers y túnel vía FCM (el servidor limita la frecuencia)',
+                              title: Text(loc.settingsPushNotifications),
+                              subtitle: Text(
+                                loc.settingsPushNotificationsDesc,
                                 style: TextStyle(fontSize: 11),
                               ),
                             ),
@@ -346,13 +423,13 @@ class SettingsPageState extends State<SettingsPage> {
                         ],
                       ),
                     ),
-                    _sectionTitle('Sesión'),
+                    _sectionTitle(loc.settingsSectionSession),
                     _card(context, children: [
                       ListTile(
                         leading: Icon(Icons.logout,
                             color: context.palette.red.withValues(alpha: 0.9)),
-                        title: const Text('Cerrar sesión'),
-                        subtitle: Text('Usuario: $user'),
+                        title: Text(loc.settingsLogout),
+                        subtitle: Text('${loc.settingsUserPrefix}$user'),
                         onTap: () async {
                           final a = context.read<AuthStore>();
                           await context
@@ -379,7 +456,7 @@ class SettingsPageState extends State<SettingsPage> {
                           );
                         },
                         child: Text(
-                          'Desarrollado por Skyline',
+                          loc.settingsDevelopedBy,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 11,
@@ -405,7 +482,7 @@ class SettingsPageState extends State<SettingsPage> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(28, 14, 28, 28),
                       child: Text(
-                        'Cliente Flutter · WireGuard UI',
+                        loc.settingsFooterTagline,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 11, color: context.palette.textMuted),
@@ -422,6 +499,7 @@ class SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _hero(BuildContext context, String initials, String host) {
+    final loc = AppLocalizations.of(context)!;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 14),
       child: Material(
@@ -460,10 +538,12 @@ class SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      initials.length >= 2
+                      child: Text(
+                        initials.length >= 2
                           ? initials.substring(0, 2).toUpperCase()
-                          : (initials.isEmpty ? 'WG' : initials.toUpperCase()),
+                          : (initials.isEmpty
+                              ? loc.settingsHeroInitialsFallback
+                              : initials.toUpperCase()),
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -538,14 +618,16 @@ class SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _tile(IconData icon, String title, String sub) {
+    final loc = AppLocalizations.of(context)!;
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
-      subtitle: Text(sub.isEmpty ? '—' : sub),
+      subtitle: Text(sub.isEmpty ? loc.commonDash : sub),
     );
   }
 
   Future<void> _editBasePathDialog(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
     final cfg = context.read<ServerSettings>();
     final auth = context.read<AuthStore>();
     final pathCtrl = TextEditingController(text: cfg.basePath);
@@ -561,14 +643,14 @@ class SettingsPageState extends State<SettingsPage> {
           return StatefulBuilder(
             builder: (ctx, setLocal) {
               return AlertDialog(
-                title: const Text('Base path del panel'),
+                title: Text(loc.settingsPanelPathDialogTitle),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Servidor (solo lectura)',
+                        loc.settingsPanelPathServerReadonly,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -589,10 +671,9 @@ class SettingsPageState extends State<SettingsPage> {
                         controller: pathCtrl,
                         enabled: !busy,
                         decoration: InputDecoration(
-                          labelText: 'Base path',
-                          hintText: 'ej. /wg',
-                          helperText:
-                              'Se validará contra la API antes de guardar.',
+                          labelText: loc.settingsPanelPathFieldLabel,
+                          hintText: loc.settingsPanelPathFieldHint,
+                          helperText: loc.settingsPanelPathHelper,
                           errorText: err,
                         ),
                         autocorrect: false,
@@ -610,7 +691,7 @@ class SettingsPageState extends State<SettingsPage> {
                 actions: [
                   TextButton(
                     onPressed: busy ? null : () => Navigator.pop(ctx, null),
-                    child: const Text('Cancelar'),
+                    child: Text(loc.commonCancel),
                   ),
                   FilledButton(
                     onPressed: busy
@@ -628,8 +709,7 @@ class SettingsPageState extends State<SettingsPage> {
                             if (!ctx.mounted) return;
                             if (!ok) {
                               setLocal(() {
-                                err =
-                                    'Este path no responde a la API con tu sesión.';
+                                err = loc.settingsPanelPathProbeFailed;
                                 busy = false;
                               });
                               return;
@@ -639,7 +719,7 @@ class SettingsPageState extends State<SettingsPage> {
                             // (“controller disposed”, Provider asserts).
                             Navigator.pop(ctx, pathCtrl.text.trim());
                           },
-                    child: const Text('Guardar'),
+                    child: Text(loc.commonSave),
                   ),
                 ],
               );
@@ -661,6 +741,7 @@ class SettingsPageState extends State<SettingsPage> {
     BuildContext context,
     String proposedPath,
   ) async {
+    final loc = AppLocalizations.of(context)!;
     final cfg = context.read<ServerSettings>();
     final auth = context.read<AuthStore>();
     final wg = context.read<WgApplyController>();
@@ -677,9 +758,9 @@ class SettingsPageState extends State<SettingsPage> {
       if (!context.mounted) return;
       unawaited(ServerHealthScheduler.syncRegistration(auth.ready));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'No se pudo restablecer la sesión con el nuevo path. Se revirtió el path.',
+            loc.settingsPanelPathRevertFailed,
           ),
         ),
       );
@@ -689,7 +770,7 @@ class SettingsPageState extends State<SettingsPage> {
     if (!mounted) return;
     unawaited(ServerHealthScheduler.syncRegistration(auth.ready));
 
-    // Primero esta pantalla (evita "dirty widget in wrong scope" mezclando setState con reload).
+    // First this screen (avoids "dirty widget in wrong scope" by mixing setState with reload).
     await _load();
     if (!context.mounted) return;
 
@@ -698,8 +779,8 @@ class SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
       reload.notifyReload();
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Base path actualizado; datos recargados.'),
+        SnackBar(
+          content: Text(loc.settingsPanelPathUpdated),
         ),
       );
     });

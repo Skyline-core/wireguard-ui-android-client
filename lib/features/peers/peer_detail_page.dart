@@ -12,6 +12,7 @@ import '../../core/format/formatters.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/wg_apply_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 
 class PeerDetailPage extends StatefulWidget {
   const PeerDetailPage({super.key, required this.clientId});
@@ -79,10 +80,11 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
       await context.read<WgApplyController>().refreshFromServer(auth, cfg);
       if (!mounted) return;
       if (!ok) {
+        final loc = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No se pudo borrar el peer en el servidor.',
+              loc.peerDetailDeleteFailed,
             ),
           ),
         );
@@ -97,13 +99,14 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final e = _envelope;
 
     return Scaffold(
       backgroundColor: context.palette.bg,
       appBar: AppBar(
         title: Text(
-          e?.client.name ?? 'Peer',
+          e?.client.name ?? loc.peerDetailFallbackTitle,
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
@@ -121,8 +124,9 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
   }
 
   Widget _buildBody(WgClientEnvelope e) {
+    final loc = AppLocalizations.of(context)!;
     final c = e.client;
-    final ip = c.allocatedIps.isNotEmpty ? c.allocatedIps.first : '—';
+    final ip = c.allocatedIps.isNotEmpty ? c.allocatedIps.first : loc.commonDash;
     final png = _pngBytes(e.qrCode);
 
     final down = _traffic?.downloadBytes ?? 0;
@@ -187,9 +191,9 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
                     if (!mounted) return;
                     if (!ok) {
                       messenger.showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
-                            'No se pudo guardar el estado en el servidor.',
+                            loc.peerToggleSaveFailed,
                           ),
                         ),
                       );
@@ -214,7 +218,7 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
           children: [
             Expanded(
               child: _statTile(
-                'Descarga',
+                loc.trafficMetricDownload,
                 '↓ ${formatBytes(down)}',
                 context.palette.accent,
               ),
@@ -222,7 +226,7 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
             const SizedBox(width: 10),
             Expanded(
               child: _statTile(
-                'Subida',
+                loc.trafficMetricUpload,
                 '↑ ${formatBytes(up)}',
                 context.palette.yellow,
               ),
@@ -256,7 +260,7 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
                 ),
               const SizedBox(height: 10),
               Text(
-                'Escanea desde la app WireGuard en tu dispositivo',
+                loc.peerQrHint,
                 style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -265,7 +269,7 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
         ),
         const SizedBox(height: 16),
         Text(
-          'CONFIGURACIÓN',
+          loc.peerSectionConfiguration,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.9,
@@ -274,30 +278,31 @@ class _PeerDetailPageState extends State<PeerDetailPage> {
           ),
         ),
         const SizedBox(height: 8),
-        _rowTile('Allowed IPs', c.allowedIps.join(', ')),
-        _rowTile('DNS', c.useServerDns ? '(servidor)' : '—'),
-        _rowTile('Endpoint', c.endpoint.isEmpty ? '—' : c.endpoint),
+        _rowTile(loc.peerRowAllowedIps, c.allowedIps.join(', ')),
+        _rowTile(loc.peerRowDns,
+            c.useServerDns ? loc.commonServerDnsParen : loc.commonDash),
+        _rowTile(loc.peerRowEndpoint,
+            c.endpoint.isEmpty ? loc.commonDash : c.endpoint),
         const SizedBox(height: 24),
         ListTile(
           leading: Icon(Icons.delete_forever, color: context.palette.red),
-          title: Text('Eliminar cliente',
+          title: Text(loc.peerDeleteTileTitle,
               style: TextStyle(color: context.palette.red)),
-          subtitle:
-              const Text('Revoca acceso (endpoint /remove-client)'),
+          subtitle: Text(loc.peerDeleteTileSubtitle),
           onTap: () async {
             final sure = await showDialog<bool>(
               context: context,
               builder: (ctx) => AlertDialog(
-                title: const Text('¿Eliminar?'),
-                content: const Text('Esta acción no se puede deshacer.'),
+                title: Text(loc.peerDeleteConfirmTitle),
+                content: Text(loc.peerDeleteConfirmBody),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(ctx, false),
-                    child: const Text('Cancelar'),
+                    child: Text(loc.commonCancel),
                   ),
                   FilledButton(
                     onPressed: () => Navigator.pop(ctx, true),
-                    child: const Text('Eliminar'),
+                    child: Text(loc.commonDelete),
                   ),
                 ],
               ),

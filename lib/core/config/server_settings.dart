@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'server_origin.dart';
 
-/// Tema de la app: [system] sigue el modo claro/oscuro del dispositivo.
+/// App theme: [system] follows the device's light/dark mode.
 enum AppThemePreference { system, light, dark }
 
 extension AppThemePreferenceMode on AppThemePreference {
@@ -15,12 +15,25 @@ extension AppThemePreferenceMode on AppThemePreference {
       };
 }
 
+/// App language preference
+enum AppLocalePreference { system, en, es }
+
+extension AppLocalePreferenceMode on AppLocalePreference {
+  static AppLocalePreference fromString(String? v) {
+    if (v == 'en') return AppLocalePreference.en;
+    if (v == 'es') return AppLocalePreference.es;
+    return AppLocalePreference.system;
+  }
+}
+
 class ServerSettings extends ChangeNotifier {
   static const _urlKey = 'wgui_base_url';
   static const _pathKey = 'wgui_base_path';
   static const _trafficPeerChartKey = 'wgui_traffic_peer_chart';
   static const _passkeyOriginKey = 'wgui_passkey_public_origin';
   static const _themePreferenceKey = 'wgui_theme_preference';
+  static const _appLockEnabledKey = 'wgui_app_lock_enabled';
+  static const _localePreferenceKey = 'wgui_locale_preference';
 
   /// Empty until [load] runs; with no saved prefs, the panel is unconfigured (no placeholder network calls).
   String baseUrl = '';
@@ -33,8 +46,15 @@ class ServerSettings extends ChangeNotifier {
   /// Traffic screen: stacked bars per peer (matches wireguard-ui web) vs aggregate time buckets.
   bool trafficChartPerPeer = false;
 
-  /// Preferencia de tema (claro / oscuro / sistema).
+  /// Theme preference (light / dark / system).
   AppThemePreference themePreference = AppThemePreference.system;
+
+  /// Language preference
+  AppLocalePreference localePreference = AppLocalePreference.system;
+
+  /// Whether biometric app lock is enabled
+  bool appLockEnabled = false;
+
 
   bool _loaded = false;
 
@@ -68,8 +88,17 @@ class ServerSettings extends ChangeNotifier {
     trafficChartPerPeer = p.getBool(_trafficPeerChartKey) ?? false;
     passkeyPublicOrigin = p.getString(_passkeyOriginKey) ?? '';
     themePreference = _parseThemePreference(p.getString(_themePreferenceKey));
+    localePreference = AppLocalePreferenceMode.fromString(p.getString(_localePreferenceKey));
+    appLockEnabled = p.getBool(_appLockEnabledKey) ?? false;
 
     _loaded = true;
+    notifyListeners();
+  }
+
+  Future<void> setAppLockEnabled(bool value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setBool(_appLockEnabledKey, value);
+    appLockEnabled = value;
     notifyListeners();
   }
 
@@ -89,6 +118,13 @@ class ServerSettings extends ChangeNotifier {
     final p = await SharedPreferences.getInstance();
     await p.setString(_themePreferenceKey, value.name);
     themePreference = value;
+    notifyListeners();
+  }
+
+  Future<void> setLocalePreference(AppLocalePreference value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_localePreferenceKey, value.name);
+    localePreference = value;
     notifyListeners();
   }
 

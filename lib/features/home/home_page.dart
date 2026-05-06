@@ -16,6 +16,7 @@ import '../../core/format/formatters.dart';
 import '../../core/network/format_network_error.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../profile/profile_page.dart';
 import '../peers/new_peer_page.dart';
 import '../peers/peer_detail_page.dart';
@@ -53,6 +54,7 @@ class HomePageState extends State<HomePage> {
     final cfg = context.read<ServerSettings>();
 
     if (auth.offlineMode) {
+      final loc = AppLocalizations.of(context)!;
       if (!silent) {
         setState(() {
           loading = true;
@@ -66,7 +68,7 @@ class HomePageState extends State<HomePage> {
       setState(() {
         loading = false;
         if (snap == null) {
-          err = 'Sin datos en caché. Conecta al menos una vez con el servidor.';
+          err = loc.homeOfflineNoCache;
         } else {
           err = null;
           tunnel = snap.tunnel;
@@ -87,6 +89,7 @@ class HomePageState extends State<HomePage> {
     } else {
       setState(() => err = null);
     }
+
     try {
       final r = WguRepository.fromContext(auth, cfg);
       // Traffic series is slower; load tunnel + stats + peers first so the UI unlocks quickly.
@@ -290,6 +293,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget _header(BuildContext context, bool offline) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
       child: Row(
@@ -309,7 +313,7 @@ class HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Panel de control',
+                  loc.homeSubtitle,
                   style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
                 ),
               ],
@@ -338,6 +342,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget _heroCard(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final iface = tunnel?['iface_name']?.toString() ?? 'wg0';
     final up = tunnel?['tunnel_running'] == true;
     final online = stats?.onlineSessions ?? 0;
@@ -367,7 +372,7 @@ class HomePageState extends State<HomePage> {
             Row(
               children: [
                 Text(
-                  'INTERFAZ ACTIVA',
+                  loc.homeActiveInterface,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -398,7 +403,7 @@ class HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        up ? 'Conectado' : 'Inactivo',
+                        up ? loc.homeTunnelConnected : loc.homeTunnelInactive,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -421,7 +426,14 @@ class HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Sesiones en línea · $online · Descarga: ${formatBytes(downloadAcum)} · Subida: ${formatBytes(uploadAcum)}',
+              loc.homeTunnelStatsLine(
+                loc.homeSessionsOnlineLabel,
+                online,
+                loc.homeTrafficDownloadLabel,
+                formatBytes(downloadAcum),
+                loc.homeTrafficUploadLabel,
+                formatBytes(uploadAcum),
+              ),
               style: TextStyle(
                 fontSize: 13,
                 color: context.palette.accent,
@@ -434,7 +446,7 @@ class HomePageState extends State<HomePage> {
                 Expanded(
                   child: _miniStat(
                     '$enabled',
-                    'habilitados',
+                    loc.homeMiniPeersEnabled,
                     context.palette.green,
                   ),
                 ),
@@ -446,7 +458,7 @@ class HomePageState extends State<HomePage> {
                 Expanded(
                   child: _miniStat(
                     '↓ ${formatBitrateBitsPerSecFromBytesPerSec(clientDownloadBps)}',
-                    'descarga',
+                    loc.trafficDlShort,
                     context.palette.accent,
                   ),
                 ),
@@ -458,7 +470,7 @@ class HomePageState extends State<HomePage> {
                 Expanded(
                   child: _miniStat(
                     '↑ ${formatBitrateBitsPerSecFromBytesPerSec(clientUploadBps)}',
-                    'subida',
+                    loc.trafficUlShort,
                     context.palette.yellow,
                   ),
                 ),
@@ -497,6 +509,7 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget _actions(BuildContext context, bool offline) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Row(
@@ -527,7 +540,7 @@ class HomePageState extends State<HomePage> {
                         Theme.of(context).colorScheme.onPrimary,
                   ),
                   icon: Icon(Icons.add, size: 20),
-                  label: const Text('Nuevo cliente'),
+                  label: Text(loc.homeNewClient),
                 );
               },
               openBuilder: (context, _) => const NewPeerPage(),
@@ -551,9 +564,10 @@ class HomePageState extends State<HomePage> {
 
   Future<void> _downloadAllConfigsZip() async {
     if (_busyDownloadZip || !mounted) return;
+    final loc = AppLocalizations.of(context)!;
     if (clients.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay peers para descargar.')),
+        SnackBar(content: Text(loc.homeZipNoPeers)),
       );
       return;
     }
@@ -579,12 +593,12 @@ class HomePageState extends State<HomePage> {
               mimeType: 'application/zip',
             ),
           ],
-          subject: 'Configuraciones WireGuard',
+          subject: loc.homeShareZipSubject,
         ),
       );
       if (!mounted) return;
       messenger.showSnackBar(
-        const SnackBar(content: Text('ZIP listo para guardar o compartir.')),
+        SnackBar(content: Text(loc.homeZipReady)),
       );
     } catch (e) {
       if (!mounted) return;
@@ -625,12 +639,13 @@ class HomePageState extends State<HomePage> {
   }
 
   Widget _peerSectionHeader(BuildContext context, bool offline) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
       child: Row(
         children: [
           Text(
-            'PEERS',
+            loc.homePeersHeading,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -642,7 +657,7 @@ class HomePageState extends State<HomePage> {
           TextButton(
             onPressed: offline ? null : widget.onOpenPeers,
             child: Text(
-              'Ver todos',
+              loc.homeSeeAllPeers,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 color: context.palette.accent,
@@ -682,19 +697,20 @@ class PeerPreviewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final c = envelope.client;
-    final ip = c.allocatedIps.isNotEmpty ? c.allocatedIps.first : '—';
+    final ip = c.allocatedIps.isNotEmpty ? c.allocatedIps.first : loc.commonDash;
     final vpnOn = c.enabled && (onlineHint == true);
     String statusText;
     Color statusColor;
     if (!c.enabled) {
-      statusText = 'Apagado';
+      statusText = loc.peerStatusOff;
       statusColor = context.palette.textMuted;
     } else if (vpnOn) {
-      statusText = '● En línea';
+      statusText = loc.peerStatusOnline;
       statusColor = context.palette.green;
     } else {
-      statusText = 'Desconectado';
+      statusText = loc.peerStatusDisconnected;
       statusColor = context.palette.textSecondary;
     }
 
@@ -767,9 +783,9 @@ class PeerPreviewTile extends StatelessWidget {
                                   if (!context.mounted) return;
                                   if (!ok) {
                                     messenger.showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
-                                          'No se pudo guardar el estado del peer en el servidor.',
+                                          loc.peerSaveStateFailed,
                                         ),
                                       ),
                                     );
@@ -807,7 +823,7 @@ class PeerPreviewTile extends StatelessWidget {
                 if (show24hTraffic) ...[
                   const SizedBox(height: 7),
                   Text(
-                    '24 h',
+                    loc.peerTraffic24hBadge,
                     style: TextStyle(
                       fontSize: 9,
                       letterSpacing: 0.35,

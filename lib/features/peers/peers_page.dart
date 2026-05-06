@@ -10,6 +10,7 @@ import '../../core/offline/offline_snapshot_store.dart';
 import '../../core/wg_apply_controller.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../home/home_page.dart';
 import 'new_peer_page.dart';
 import 'peer_detail_page.dart';
@@ -41,6 +42,7 @@ class PeersPageState extends State<PeersPage>
     final auth = context.read<AuthStore>();
     final cfg = context.read<ServerSettings>();
     final r = WguRepository.fromContext(auth, cfg);
+    final loc = AppLocalizations.of(context)!;
 
     if (auth.offlineMode) {
       if (!silent) {
@@ -56,7 +58,7 @@ class PeersPageState extends State<PeersPage>
       setState(() {
         _loading = false;
         if (snap == null) {
-          _err = 'Sin datos en caché.';
+          _err = loc.peersOfflineNoCache;
         } else {
           _err = null;
           _list = snap.clients;
@@ -151,6 +153,7 @@ class PeersPageState extends State<PeersPage>
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     final q = _search.text.trim().toLowerCase();
     final baseRows = _list.where((e) {
       final c = e.client;
@@ -257,7 +260,7 @@ class PeersPageState extends State<PeersPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Peers',
+                          loc.peersPageTitle,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -266,7 +269,7 @@ class PeersPageState extends State<PeersPage>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Clientes registrados',
+                          loc.peersSubtitle,
                           style: TextStyle(
                             fontSize: 12,
                             color: context.palette.textSecondary,
@@ -288,7 +291,7 @@ class PeersPageState extends State<PeersPage>
                 enabled: !offline,
                 controller: _search,
                 decoration: InputDecoration(
-                  hintText: 'Buscar peer, IP…',
+                  hintText: loc.peersSearchHint,
                   prefixIcon:
                       Icon(Icons.search, color: context.palette.textMuted),
                   filled: true,
@@ -308,16 +311,19 @@ class PeersPageState extends State<PeersPage>
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _chip('Todos · ${baseRows.length}', 'all', offline: offline),
-                  _chip('Con tráfico · $onlineApprox', 'on', offline: offline),
+                  _chip(loc.peersChipAll(baseRows.length), 'all',
+                      offline: offline),
+                  _chip(loc.peersChipWithTraffic(onlineApprox), 'on',
+                      offline: offline),
                   _chip(
-                    'Sin tráfico · ${(baseRows.length - onlineApprox).clamp(0, 9999)}',
+                    loc.peersChipNoTraffic(
+                        (baseRows.length - onlineApprox).clamp(0, 9999)),
                     'off',
                     offline: offline,
                   ),
-                  _chip('Habilitados · $enabledCount', 'enabled_only',
+                  _chip(loc.peersChipEnabled(enabledCount), 'enabled_only',
                       offline: offline),
-                  _chip('Deshabilitados · $disabledCount', 'disabled_only',
+                  _chip(loc.peersChipDisabled(disabledCount), 'disabled_only',
                       offline: offline),
                 ],
               ),

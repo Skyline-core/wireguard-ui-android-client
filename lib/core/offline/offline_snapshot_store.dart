@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../api/models/client_models.dart';
 import '../../api/models/dashboard_stats.dart';
 import '../../api/models/traffic_series.dart';
+import '../crypto/crypto_store.dart';
 
 /// Local JSON cache of the last known data when the server does not respond.
 class OfflineSnapshotStore {
@@ -23,11 +24,14 @@ class OfflineSnapshotStore {
     try {
       final f = await _file();
       if (!await f.exists()) return null;
-      final txt = await f.readAsString();
+      final encTxt = await f.readAsString();
+      final txt = await CryptoStore.decryptString(encTxt);
       final j = jsonDecode(txt);
       if (j is Map<String, dynamic>) return j;
       return null;
     } catch (_) {
+      // If decryption fails, it might be an old unencrypted file or corrupt.
+      // We ignore it so a new snapshot can be created.
       return null;
     }
   }
@@ -35,7 +39,9 @@ class OfflineSnapshotStore {
   static Future<void> _writeRaw(Map<String, dynamic> data) async {
     try {
       final f = await _file();
-      await f.writeAsString(const JsonEncoder.withIndent('  ').convert(data));
+      final txt = const JsonEncoder.withIndent('  ').convert(data);
+      final encTxt = await CryptoStore.encryptString(txt);
+      await f.writeAsString(encTxt);
     } catch (e) {
       debugPrint('[OfflineSnapshotStore] write failed: $e');
     }
@@ -48,7 +54,7 @@ class OfflineSnapshotStore {
     } catch (_) {}
   }
 
-  /// Fusiona con lo ya guardado (no borra claves no enviadas).
+  /// Merges with the existing data (does not delete unsent keys).
   static Future<void> merge({
     String? username,
     Map<String, dynamic>? tunnel,

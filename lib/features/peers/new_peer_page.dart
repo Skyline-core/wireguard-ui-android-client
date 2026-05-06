@@ -7,6 +7,7 @@ import '../../core/config/server_settings.dart';
 import '../../core/session/auth_store.dart';
 import '../../core/wg_apply_controller.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 import 'peer_detail_page.dart';
 
 class NewPeerPage extends StatefulWidget {
@@ -39,7 +40,7 @@ class _NewPeerPageState extends State<NewPeerPage> {
   Future<void> _create() async {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      setState(() => _err = 'Nombre requerido');
+      setState(() => _err = AppLocalizations.of(context)!.newPeerNameRequired);
       return;
     }
 
@@ -59,7 +60,7 @@ class _NewPeerPageState extends State<NewPeerPage> {
         final s = await r.suggestIps();
         if (s.isEmpty) {
           setState(() {
-            _err = 'No se pudo obtener IP sugerida';
+            _err = AppLocalizations.of(context)!.newPeerSuggestIpFailed;
             _busy = false;
           });
           return;
@@ -89,24 +90,25 @@ class _NewPeerPageState extends State<NewPeerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: context.palette.bg,
       appBar: AppBar(
-        title: const Text('Nuevo peer', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Text(loc.newPeerTitle, style: TextStyle(fontWeight: FontWeight.w800)),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Nombre del cliente'),
+            decoration: InputDecoration(labelText: loc.newPeerNameLabel),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _ip,
-            decoration: const InputDecoration(
-              labelText: 'IP asignada (opcional)',
-              hintText: '10.0.0.x · vacío = primera sugerida',
+            decoration: InputDecoration(
+              labelText: loc.newPeerIpOptionalLabel,
+              hintText: loc.newPeerIpHint,
             ),
           ),
           const SizedBox(height: 8),
@@ -115,7 +117,7 @@ class _NewPeerPageState extends State<NewPeerPage> {
             child: TextButton.icon(
               onPressed: _suggestIp,
               icon: Icon(Icons.auto_fix_high, size: 18),
-              label: const Text('Sugerir IP (/api/suggest-client-ips)'),
+              label: Text(loc.newPeerSuggestIp),
             ),
           ),
           if (_err != null) Text(_err!, style: TextStyle(color: context.palette.red)),
@@ -129,11 +131,11 @@ class _NewPeerPageState extends State<NewPeerPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : Icon(Icons.check),
-            label: const Text('Crear en wireguard-ui'),
+            label: Text(loc.newPeerSubmit),
           ),
           const SizedBox(height: 12),
           Text(
-            'After creating, tap Apply (banner or web) if the server does not auto-apply wg.conf.',
+            loc.newPeerApplyHint,
             style: TextStyle(fontSize: 11, color: context.palette.textMuted),
           ),
         ],
