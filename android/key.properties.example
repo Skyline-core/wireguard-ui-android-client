@@ -1,7 +1,8 @@
-# Copy to android/key.properties and fill in. Do not commit key.properties.
-# Generate the .jks with keytool (see README or Flutter docs).
+# Copy this file to android/key.properties and fill in. Do not commit key.properties.
+# Step-by-step (cp, keytool, editing this file, release build): README section
+# "Release signing (keystore and key.properties)" → "Configure from key.properties.example".
 #
-# storeFile: path relative to the android/ project folder (same folder as key.properties).
+# storeFile: path relative to the android/ project folder (where key.properties lives).
 
 storePassword=CHANGE_ME
 keyPassword=CHANGE_ME

@@ -137,7 +137,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLanguageSystem.
   ///
   /// In es, this message translates to:
-  /// **'Automático (Sistema)'**
+  /// **'Automático'**
   String get settingsLanguageSystem;
 
   /// No description provided for @settingsLanguageEn.

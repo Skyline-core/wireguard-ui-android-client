@@ -6,7 +6,7 @@
   "settingsTitle": "Settings",
   "settingsSectionApp": "Application",
   "settingsLanguageTitle": "Language",
-  "settingsLanguageSystem": "System Default",
+  "settingsLanguageSystem": "Automatic",
   "settingsLanguageEn": "English",
   "settingsLanguageEs": "Spanish",
   "settingsAppLockTitle": "Biometric App Lock",

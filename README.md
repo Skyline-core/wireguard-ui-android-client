@@ -216,44 +216,61 @@ Users can enable a **biometric app lock** in Settings so reopening the app may r
 
 ## Release signing (keystore and `key.properties`)
 
-Release builds use a **Java keystore** when Gradle finds `**android/key.properties`**. That file is **local only** (see `.gitignore`).
+Release builds use a **Java keystore** when Gradle finds **`android/key.properties`** (same directory as **`android/key.properties.example`**). That real file is **gitignored** — only the **`.example`** ships in the repo.
 
-### Template
+### Configure from `key.properties.example`
 
-```bash
-cp android/key.properties.example android/key.properties
-```
+1. **Copy the template** (from the repo root):
 
+   ```bash
+   cp android/key.properties.example android/key.properties
+   ```
 
-| Property        | Meaning                                                              |
-| --------------- | -------------------------------------------------------------------- |
-| `storePassword` | Keystore file password.                                              |
-| `keyPassword`   | Key entry password (often same as store).                            |
-| `keyAlias`      | Must match the `**-alias**` used with `keytool` (example: `upload`). |
-| `storeFile`     | Path **relative to `android/`** to the `.jks` / `.keystore` file.    |
+2. **Create a keystore** (or reuse your Play/App signing keystore). The defaults in **`key.properties.example`** assume **alias `upload`** and **`release-keystore.jks`** sitting next to **`key.properties`** under **`android/`**:
 
+   ```bash
+   cd android
+   keytool -genkeypair -v \
+     -storetype JKS \
+     -keystore release-keystore.jks \
+     -alias upload \
+     -keyalg RSA \
+     -keysize 2048 \
+     -validity 9125
+   ```
 
-### Generate a keystore
+   If you choose another **`-alias`** or **filename**, update **`key.properties`** to match (see below). Back up the **`.jks`** and passwords **outside** git.
 
-```bash
-cd android
-keytool -genkeypair -v \
-  -storetype JKS \
-  -keystore release-keystore.jks \
-  -alias upload \
-  -keyalg RSA \
-  -keysize 2048 \
-  -validity 9125
-```
+3. **Edit `android/key.properties`** (never commit it). Replace the placeholders from the example with your real passwords and paths:
 
-Back up the keystore and passwords **outside** git.
+   | Property        | Meaning                                                                 |
+   | --------------- | ----------------------------------------------------------------------- |
+   | `storePassword` | Password for the **keystore file** (`-storepass` in `keytool` terms).   |
+   | `keyPassword`   | Password for the **key entry** (often the same as `storePassword`).   |
+   | `keyAlias`      | Must match **`keytool -alias …`** (template default: **`upload`**).     |
+   | `storeFile`     | Path to the **`.jks` / `.keystore` relative to the `android/` folder. |
 
-### Build with signing
+   Example after filling in (passwords are illustrative only):
 
-```bash
-flutter build apk --release
-flutter build appbundle --release
-```
+   ```properties
+   storePassword=your-keystore-password
+   keyPassword=your-key-password
+   keyAlias=upload
+   storeFile=release-keystore.jks
+   ```
+
+   If the keystore lives elsewhere, adjust **`storeFile`**: e.g. **`upload/upload.jks`** means **`android/upload/upload.jks`**. Gradle resolves this from the **`android/`** project directory (see **`android/app/build.gradle.kts`**).
+
+4. **Verify** Gradle picks up signing: **`cd android && ./gradlew :app:signingReport`** — the **release** config should show your certificate (not only the debug key).
+
+5. **Build** signed artifacts from the repo root:
+
+   ```bash
+   flutter build apk --release
+   flutter build appbundle --release
+   ```
+
+Without **`android/key.properties`**, **`flutter build … --release`** still runs but signs with the **debug** keystore — fine for local tests, **not** for Play upload or matching production **`WGUI_ANDROID_PASSKEY_SHA256`**.
 
 ### Fingerprints (`signingReport`) and Passkeys
 
@@ -282,8 +299,15 @@ Operational checklist:
 ## Firebase (push)
 
 1. In [Firebase Console](https://console.firebase.google.com/), add an Android app whose **package name** matches `**applicationId`** in `android/app/build.gradle.kts` (default: `**com.wireguardui.wireguard_ui_client`**).
-2. Download `**google-services.json`** into `**android/app/**`. The Google Services Gradle plugin is applied only when that file exists.
-3. On **WireGuard UI**, configure the Firebase **service account** JSON and `**FCM_CREDENTIALS_FILE`** / `**GOOGLE_APPLICATION_CREDENTIALS`** — that file is **not** `google-services.json`.
+2. Download `**google-services.json`** into `**android/app/**`. The Google Services Gradle plugin is applied only when that file exists — this file is **only for the Flutter/Android build**. The WireGuard UI **server never reads it**.
+
+### Server: service account JSON (FCM from the backend)
+
+WireGuard UI needs a **Firebase / Google Cloud service account key** (`"type": "service_account"` in the JSON):
+
+1. In the **same** Firebase project: **Project settings** (gear) → **Service accounts**.
+2. **Generate new private key** (under Firebase Admin SDK). Save the downloaded **`.json`** on the WireGuard UI host (e.g. `/etc/wireguard-ui/firebase-service-account.json`), `chmod 600`, readable by the process user.
+3. Set **`FCM_CREDENTIALS_FILE`** (or **`GOOGLE_APPLICATION_CREDENTIALS`**) to that path. Full checklist, API enablement, and troubleshooting: **[WireGuard UI README — Firebase Cloud Messaging (FCM)](https://github.com/Skyline-core/wireguard-ui/blob/master/README.md#firebase-cloud-messaging-fcm)**.
 
 After install: sign in → **Settings** → enable **Push notifications** and grant permission on Android 13+. Sign-out calls `**/api/push/unregister`**.
 

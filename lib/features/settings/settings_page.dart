@@ -183,6 +183,7 @@ class SettingsPageState extends State<SettingsPage> {
                                     ),
                                     const SizedBox(height: 12),
                                     SegmentedButton<AppThemePreference>(
+                                      expandedInsets: EdgeInsets.zero,
                                       segments: [
                                         ButtonSegment(
                                           value: AppThemePreference.light,
@@ -224,11 +225,8 @@ class SettingsPageState extends State<SettingsPage> {
                                     ),
                                     const SizedBox(height: 12),
                                     SegmentedButton<AppLocalePreference>(
+                                      expandedInsets: EdgeInsets.zero,
                                       segments: [
-                                        ButtonSegment(
-                                          value: AppLocalePreference.system,
-                                          label: Text(loc.settingsLanguageSystem),
-                                        ),
                                         ButtonSegment(
                                           value: AppLocalePreference.en,
                                           label: Text(loc.settingsLanguageEn),
@@ -236,6 +234,10 @@ class SettingsPageState extends State<SettingsPage> {
                                         ButtonSegment(
                                           value: AppLocalePreference.es,
                                           label: Text(loc.settingsLanguageEs),
+                                        ),
+                                        ButtonSegment(
+                                          value: AppLocalePreference.system,
+                                          label: Text(loc.settingsLanguageSystem),
                                         ),
                                       ],
                                       selected: {cfg.localePreference},
