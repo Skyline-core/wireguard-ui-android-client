@@ -4,10 +4,10 @@ Android **Flutter** client for **[WireGuard UI](https://github.com/Skyline-core/
 
 **Supported target:** **Android** (APK / AAB). This repository keeps only the `**android/`** Flutter platform; desktop and web targets are omitted on purpose.
 
-<img width="1344" height="2992" alt="Screenshot_1778322909" src="https://github.com/user-attachments/assets/34416da2-fc27-4b62-862b-e773a154f966" />
-<img width="1344" height="2992" alt="Screenshot_1778322905" src="https://github.com/user-attachments/assets/2191bfc9-6cb3-4375-b067-8f4d00d6b057" />
-<img width="1344" height="2992" alt="Screenshot_1778322902" src="https://github.com/user-attachments/assets/ea09835e-6c14-4633-8383-36d6354fd445" />
-<img width="1344" height="2992" alt="Screenshot_1778322898" src="https://github.com/user-attachments/assets/d6a1d5c6-7c43-48ea-afd8-200671be200b" />
+<img width="30%" height="30%" alt="Screenshot_1778322909" src="https://github.com/user-attachments/assets/34416da2-fc27-4b62-862b-e773a154f966" />
+<img width="30%" height="30%" alt="Screenshot_1778322905" src="https://github.com/user-attachments/assets/2191bfc9-6cb3-4375-b067-8f4d00d6b057" />
+<img width="30%" height="30%" alt="Screenshot_1778322902" src="https://github.com/user-attachments/assets/ea09835e-6c14-4633-8383-36d6354fd445" />
+<img width="30%" height="30%" alt="Screenshot_1778322898" src="https://github.com/user-attachments/assets/d6a1d5c6-7c43-48ea-afd8-200671be200b" />
 
 
 ---
